@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36310.24
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrmGenerator", "Generator\OrmGenerator.csproj", "{7EF4640F-C7BE-4B8F-9B5F-C513C677EEF7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{27BE28BF-991E-4B93-A5DB-6ED1E375468B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7EF4640F-C7BE-4B8F-9B5F-C513C677EEF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7EF4640F-C7BE-4B8F-9B5F-C513C677EEF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7EF4640F-C7BE-4B8F-9B5F-C513C677EEF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7EF4640F-C7BE-4B8F-9B5F-C513C677EEF7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27BE28BF-991E-4B93-A5DB-6ED1E375468B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27BE28BF-991E-4B93-A5DB-6ED1E375468B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27BE28BF-991E-4B93-A5DB-6ED1E375468B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27BE28BF-991E-4B93-A5DB-6ED1E375468B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D957B5AC-82E2-4F61-AD11-95D78CFE9CB1}
+	EndGlobalSection
+EndGlobal
