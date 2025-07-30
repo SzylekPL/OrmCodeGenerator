@@ -58,7 +58,7 @@ public class MainGenerator : IIncrementalGenerator
 						return result;
 					}
 
-					public static IEnumerable<T> Get<T>(this DbCommand command) where T: IOrmModel<T>
+					public static IEnumerable<T> GetIteratorOf<T>(this DbCommand command) where T: IOrmModel<T>
 					{
 						using DbDataReader reader = command.ExecuteReader();
 				
@@ -66,7 +66,7 @@ public class MainGenerator : IIncrementalGenerator
 							yield return T.GetSingleModel(reader);
 					}
 
-					public static async IAsyncEnumerable<T> GetAsync<T>(this DbCommand command, CancellationToken token = default) where T: IOrmModel<T>
+					public static async IAsyncEnumerable<T> GetIteratorOfAsync<T>(this DbCommand command, CancellationToken token = default) where T: IOrmModel<T>
 					{
 						using DbDataReader reader = await command.ExecuteReaderAsync(token);
 				
