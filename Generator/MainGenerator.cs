@@ -28,16 +28,31 @@ public class MainGenerator : IIncrementalGenerator
 				{
 					public static abstract List<TSelf> GetListFromQuery(DbCommand command);
 					public static abstract Task<List<TSelf>> GetListFromQueryAsync(DbCommand command, CancellationToken token = default);
+					public static abstract IEnumerable<TSelf> GetFromQuery(DbCommand command);
+					public static abstract IAsyncEnumerable<TSelf> GetFromQueryAsync(DbCommand command, CancellationToken token = default);
 				}
 				""");
 			ctx.AddSource("DbCommandExtensions.g.cs",
 				"""
 				using System.Data.Common;
+				using OrmGenerator;
 				
 				public static class DbCommandExtensions
 				{
-					public static List<T> GetListOf<T>(this DbCommand command) where T: OrmGenerator.IOrmModel<T> => T.GetListFromQuery(command);
-					public static async Task<List<T>> GetListOfAsync<T>(this DbCommand command, CancellationToken token = default) where T: OrmGenerator.IOrmModel<T> => await T.GetListFromQueryAsync(command, token);
+					public static List<T> GetListOf<T>(this DbCommand command) where T: IOrmModel<T> =>
+						T.GetListFromQuery(command);
+
+					public static async Task<List<T>> GetListOfAsync<T>(this DbCommand command, CancellationToken token = default) where T: IOrmModel<T> =>
+						await T.GetListFromQueryAsync(command, token);
+
+					public static IEnumerable<T> Get<T>(this DbCommand command) where T: IOrmModel<T> =>
+						T.GetFromQuery(command);
+
+					public static async IAsyncEnumerable<T> GetAsync<T>(this DbCommand command, CancellationToken token = default) where T: IOrmModel<T>
+					{
+						await foreach (T item in T.GetFromQueryAsync(command, token))
+							yield return item;
+					}
 				}
 				""");
 		});
@@ -64,6 +79,7 @@ public class MainGenerator : IIncrementalGenerator
 		context.RegisterSourceOutput(provider, (spc, model) =>
 		{
 			StringBuilder builder = new();
+
 			builder.AppendLine(
 			$$"""
 			using System.Data.Common;
@@ -71,82 +87,59 @@ public class MainGenerator : IIncrementalGenerator
 			namespace {{model.Namespace}};
 			partial class {{model.Name}} : OrmGenerator.IOrmModel<{{model.Name}}>
 			{
+				private static {{model.Name}} GetSingleModel(DbDataReader reader)=>new()
+				{
+			""");
+
+			for (int i = 0; i < model.Properties.Length; i++)
+			{
+				(string Name, DataType Type) = model.Properties[i];
+				builder.AppendLine($"				{Name} = reader.Get{(Type == DataType.Single ? "Float" : Type.ToString())}({i}),");
+			}
+
+			builder.AppendLine($$"""
+				};
+
 				public static List<{{model.Name}}> GetListFromQuery(DbCommand command)
 				{
 					List<{{model.Name}}> result = [];
 					using DbDataReader reader = command.ExecuteReader();
 
 					while(reader.Read())
-						result.Add(new()
-						{
-			""");
+						result.Add(GetSingleModel(reader));
 
-			GenerateTypeCasts(model, builder);
-
-			builder.AppendLine(
-			$$"""
-						});
 					return result;
 				}
+
 				public static async Task<List<{{model.Name}}>> GetListFromQueryAsync(DbCommand command, CancellationToken token = default)
 				{
 					List<{{model.Name}}> result = [];
 					using DbDataReader reader = await command.ExecuteReaderAsync(token);
 
 					while(await reader.ReadAsync(token))
-						result.Add(new()
-						{
-			""");
-			GenerateTypeCasts(model, builder);
-
-			builder.AppendLine(
-			$$"""
-						});
+						result.Add(GetSingleModel(reader));
 					return result;
 				}
+
 				public static IEnumerable<{{model.Name}}> GetFromQuery(DbCommand command)
 				{
 					using DbDataReader reader = command.ExecuteReader();
 
 					while(reader.Read())
-						yield return new()
-						{
-			""");
-
-			GenerateTypeCasts(model, builder);
-
-			builder.AppendLine(
-			$$"""
-						};
+						yield return GetSingleModel(reader);
 				}
+
 				public static async IAsyncEnumerable<{{model.Name}}> GetFromQueryAsync(DbCommand command, CancellationToken token = default)
 				{
 					using DbDataReader reader = await command.ExecuteReaderAsync(token);
 
 					while(await reader.ReadAsync(token))
-						yield return new()
-						{
-			""");
-			GenerateTypeCasts(model, builder);
-
-			builder.AppendLine(
-			"""
-						};
+						yield return GetSingleModel(reader);
 				}
 			}
 			""");
 
 			spc.AddSource($"{model.Namespace}.{model.Name}.g.cs", builder.ToString());
 		});
-	}
-
-	private static StringBuilder GenerateTypeCasts(MetadataModel model, StringBuilder builder)
-	{
-		for (int i = 0; i < model.Properties.Length; i++)
-		{
-			(string Name, DataType Type) = model.Properties[i];
-			builder.AppendLine($"				{Name} = reader.Get{(Type == DataType.Single ? "Float" : Type.ToString())}({i}),");
-		}
-		return builder;
 	}
 }
