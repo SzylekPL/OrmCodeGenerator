@@ -11,15 +11,12 @@ public class MainGenerator : IIncrementalGenerator
 {
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
+		context.RegisterMarkerAttributes(
+			("OrmCodeGenerator", "OrmModelAttribute", AttributeTargets.Class),
+			("OrmCodeGenerator", "NestableOrmModelAttribute", AttributeTargets.Class)
+		);
 		context.RegisterPostInitializationOutput(static ctx =>
 		{
-			ctx.AddSource("OrmModelAttribute.g.cs",
-				"""
-				namespace OrmCodeGenerator;
-				[AttributeUsage(AttributeTargets.Class)]
-				public sealed class OrmModelAttribute : Attribute;
-				""");
-
 			ctx.AddSource("IOrmModel.g.cs",
 				"""
 				using System.Data.Common;
@@ -95,7 +92,7 @@ public class MainGenerator : IIncrementalGenerator
 					return new MetadataModel(@class.Name, @class.ContainingNamespace.Name, prop);
 				}
 			);
-		context.RegisterSourceOutput(provider, (spc, model) =>
+		context.RegisterSourceOutput(provider, static (spc, model) =>
 		{
 			StringBuilder builder = new();
 
@@ -107,22 +104,102 @@ public class MainGenerator : IIncrementalGenerator
 			namespace {{model.Namespace}};
 			partial class {{model.Name}} : IOrmModel<{{model.Name}}>
 			{
-				public static {{model.Name}} GetSingleModel(DbDataReader reader) => new()
+				public static {{model.Name}} GetSingleModel(DbDataReader reader, ref int index) => new()
 				{
 			""");
 
-			for (int i = 0; i < model.Properties.Length; i++)
+			foreach ((string Name, DataType Type) prop in model.Properties)
 			{
-				(string Name, DataType Type) = model.Properties[i];
-				builder.AppendLine($"		{Name} = reader.Get{(Type == DataType.Single ? "Float" : Type.ToString())}({i}),");
+				(string Name, DataType Type) = prop;
+				builder.AppendLine($"		{Name} = reader.Get{(Type == DataType.Single ? "Float" : Type.ToString())}(index++),");
 			}
 
 			builder.AppendLine($$"""
 				};
+				public static {{model.Name}} GetSingleModel(DbDataReader reader)
+				{
+					int a = 0;
+					return GetSingleModel(reader, ref a);
+				}
 			}
 			""");
 
 			spc.AddSource($"{model.Namespace}.{model.Name}.g.cs", builder.ToString());
 		});
+
+		IncrementalValuesProvider<NestableMetadataModel> nestableProvider = context.SyntaxProvider
+			.ForAttributeWithMetadataName(
+				"OrmCodeGenerator.NestableOrmModelAttribute",
+				predicate: static (node, _) => true,
+				transform: static (context, token) =>
+				{
+					INamedTypeSymbol @class = (INamedTypeSymbol)context.TargetSymbol;
+					ImmutableArray<(string, DataType, string?)> prop = @class
+						.GetMembers()
+						.Where(static s => s is IPropertySymbol)
+						.Cast<IPropertySymbol>()
+						.Select(static p =>
+						{
+							(string, DataType, string?) result;
+							ImmutableArray<AttributeData> attributeData = p.Type.GetAttributes();
+							if (Enum.TryParse(p.Type.Name, true, out DataType type))
+								result = (p.Name, type, null);
+							else if (attributeData.Any(static a => a.AttributeClass!.Name is "OrmModelAttribute" or "NestableOrmModelAttribute"))
+								result = (p.Name, DataType.OrmModel, p.Type.Name);
+							else
+								throw new NotSupportedException($"Data type of property {p.Name} is {p.Type.Name}, which is not supported.");
+							return result;
+						})
+						.ToImmutableArray();
+					return new NestableMetadataModel(@class.Name, @class.ContainingNamespace.Name, prop);
+				}
+			);
+		context.RegisterSourceOutput(nestableProvider, static (spc, model) =>
+		{
+			StringBuilder builder = new();
+
+			builder.AppendLine(
+			$$"""
+			using System.Data.Common;
+			using OrmGenerator;
+
+			namespace {{model.Namespace}};
+			partial class {{model.Name}} : IOrmModel<{{model.Name}}>
+			{
+				public static {{model.Name}} GetSingleModel(DbDataReader reader, ref int index) => new()
+				{
+			""");
+
+			foreach ((string Name, DataType Type, string? CustomType) prop in model.Properties)
+			{
+				(string Name, DataType Type, string? CustomType) = prop;
+				if (Type == DataType.OrmModel)
+					builder.AppendLine($"			{Name} = {CustomType}.GetSingleModel(reader, ref index),");
+				else
+					builder.AppendLine($"			{Name} = reader.Get{(Type == DataType.Single ? "Float" : Type.ToString())}(index++),");
+			}
+
+			builder.AppendLine($$"""
+				};
+				public static {{model.Name}} GetSingleModel(DbDataReader reader)
+				{
+					int a = 0;
+					return GetSingleModel(reader, ref a);
+				}			
+			}
+			""");
+
+			spc.AddSource($"{model.Namespace}.{model.Name}.g.cs", builder.ToString());
+		});
+
+		//IncrementalValueProvider<ImmutableArray<Diagnostic>> debugProvider = context.CompilationProvider.Select((c, _) => c.GetDiagnostics().Where(d => d.Severity > DiagnosticSeverity.Info).ToImmutableArray());
+
+		//context.RegisterSourceOutput(debugProvider, (spc, model) =>
+		//{
+		//	StringBuilder builder = new();
+		//	foreach(Diagnostic diagnostic in model)
+		//		builder.AppendLine(diagnostic.ToString());
+		//	spc.AddSource("debug.g.cs", builder.ToString());
+		//});
 	}
 }

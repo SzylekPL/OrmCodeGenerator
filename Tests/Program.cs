@@ -9,4 +9,6 @@ List<DbModel> models = await command.GetListOfAsync<DbModel>();
 
 
 foreach (DbModel model in models)
-	Console.WriteLine($"{model.Id}\t{model.Row1}\t{model.Row2}");
+{
+	Console.WriteLine(model);
+}

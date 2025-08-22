@@ -2,11 +2,11 @@
 
 public enum DataType
 {
+	None,
 	Boolean,
 	Byte,
 	Char,
 	DateTime,
-	//DateTimeOffset,
 	Decimal,
 	Double,
 	Single,
@@ -16,5 +16,5 @@ public enum DataType
 	Int64,
 	String,
 	TimeSpan,
-	ERROR
+	OrmModel
 }

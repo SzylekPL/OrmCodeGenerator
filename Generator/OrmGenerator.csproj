@@ -10,6 +10,7 @@
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>OrmGenerator</PackageId>
 		<Version>1.0.0</Version>
+		<UserSecretsId>e6bc0815-164d-49fb-967f-b16b3fd1c813</UserSecretsId>
 	</PropertyGroup>
 
 	<ItemGroup>
