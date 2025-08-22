@@ -55,7 +55,7 @@ public class MainGenerator : IIncrementalGenerator
 						return result;
 					}
 
-					public static IEnumerable<T> GetIteratorOf<T>(this DbCommand command) where T: IOrmModel<T>
+					public static IEnumerable<T> GetEnumerableOf<T>(this DbCommand command) where T: IOrmModel<T>
 					{
 						using DbDataReader reader = command.ExecuteReader();
 				
@@ -63,7 +63,7 @@ public class MainGenerator : IIncrementalGenerator
 							yield return T.GetSingleModel(reader);
 					}
 
-					public static async IAsyncEnumerable<T> GetIteratorOfAsync<T>(this DbCommand command, CancellationToken token = default) where T: IOrmModel<T>
+					public static async IAsyncEnumerable<T> GetAsyncEnumerableOf<T>(this DbCommand command, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken token = default) where T: IOrmModel<T>
 					{
 						using DbDataReader reader = await command.ExecuteReaderAsync(token);
 				
@@ -174,9 +174,9 @@ public class MainGenerator : IIncrementalGenerator
 			{
 				(string Name, DataType Type, string? CustomType) = prop;
 				if (Type == DataType.OrmModel)
-					builder.AppendLine($"			{Name} = {CustomType}.GetSingleModel(reader, ref index),");
+					builder.AppendLine($"		{Name} = {CustomType}.GetSingleModel(reader, ref index),");
 				else
-					builder.AppendLine($"			{Name} = reader.Get{(Type == DataType.Single ? "Float" : Type.ToString())}(index++),");
+					builder.AppendLine($"		{Name} = reader.Get{(Type == DataType.Single ? "Float" : Type.ToString())}(index++),");
 			}
 
 			builder.AppendLine($$"""
