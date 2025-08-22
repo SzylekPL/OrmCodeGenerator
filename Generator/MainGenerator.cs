@@ -30,11 +30,28 @@ public class MainGenerator : IIncrementalGenerator
 
 			ctx.AddSource("DbCommandExtensions.g.cs",
 				"""
+				using System.Data;
 				using System.Data.Common;
 				using OrmGenerator;
 				
 				public static class DbCommandExtensions
 				{
+					public static T? GetSingle<T>(this DbCommand command) where T: IOrmModel<T>?
+					{
+						using DbDataReader reader = command.ExecuteReader(CommandBehavior.SingleRow);
+						return reader.Read() 
+							? T.GetSingleModel(reader) 
+							: default;
+					}
+
+					public static async Task<T?> GetSingleAsync<T>(this DbCommand command, CancellationToken token = default) where T: IOrmModel<T>?
+					{
+						using DbDataReader reader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, token);
+						return await reader.ReadAsync(token) 
+							? T.GetSingleModel(reader) 
+							: default;
+					}
+
 					public static List<T> GetListOf<T>(this DbCommand command) where T: IOrmModel<T>
 					{
 						List<T> result = [];
