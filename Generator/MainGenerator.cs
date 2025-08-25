@@ -104,7 +104,7 @@ public class MainGenerator : IIncrementalGenerator
 						.Cast<IPropertySymbol>()
 						.Select(static p => Enum.TryParse(p.Type.Name, true, out DataType dataType)
 								? (p.Name, dataType)
-								: throw new NotSupportedException($"Data type of property {p.Name} is {p.Type.Name}, which is not supported."))
+								: (p.Name, DataType.Unknown))
 						.ToImmutableArray();
 					return new MetadataModel(@class.Name, @class.ContainingNamespace.Name, prop);
 				}
@@ -159,12 +159,9 @@ public class MainGenerator : IIncrementalGenerator
 						{
 							(string, DataType, string?) result;
 							ImmutableArray<AttributeData> attributeData = p.Type.GetAttributes();
-							if (Enum.TryParse(p.Type.Name, true, out DataType type))
-								result = (p.Name, type, null);
-							else if (attributeData.Any(static a => a.AttributeClass!.Name is "OrmModelAttribute" or "NestableOrmModelAttribute"))
-								result = (p.Name, DataType.OrmModel, p.Type.Name);
-							else
-								throw new NotSupportedException($"Data type of property {p.Name} is {p.Type.Name}, which is not supported.");
+							result = Enum.TryParse(p.Type.Name, true, out DataType type)
+									? (p.Name, type, null)
+									: (p.Name, DataType.Unknown, p.Type.Name);
 							return result;
 						})
 						.ToImmutableArray();
@@ -190,7 +187,7 @@ public class MainGenerator : IIncrementalGenerator
 			foreach ((string Name, DataType Type, string? CustomType) prop in model.Properties)
 			{
 				(string Name, DataType Type, string? CustomType) = prop;
-				if (Type == DataType.OrmModel)
+				if (Type == DataType.Unknown)
 					builder.AppendLine($"		{Name} = {CustomType}.GetSingleModel(reader, ref index),");
 				else
 					builder.AppendLine($"		{Name} = reader.Get{(Type == DataType.Single ? "Float" : Type.ToString())}(index++),");
@@ -208,15 +205,5 @@ public class MainGenerator : IIncrementalGenerator
 
 			spc.AddSource($"{model.Namespace}.{model.Name}.g.cs", builder.ToString());
 		});
-
-		//IncrementalValueProvider<ImmutableArray<Diagnostic>> debugProvider = context.CompilationProvider.Select((c, _) => c.GetDiagnostics().Where(d => d.Severity > DiagnosticSeverity.Info).ToImmutableArray());
-
-		//context.RegisterSourceOutput(debugProvider, (spc, model) =>
-		//{
-		//	StringBuilder builder = new();
-		//	foreach(Diagnostic diagnostic in model)
-		//		builder.AppendLine(diagnostic.ToString());
-		//	spc.AddSource("debug.g.cs", builder.ToString());
-		//});
 	}
 }

@@ -2,7 +2,7 @@
 
 public enum DataType
 {
-	None,
+	Unknown,
 	Boolean,
 	Byte,
 	Char,
@@ -16,5 +16,4 @@ public enum DataType
 	Int64,
 	String,
 	TimeSpan,
-	OrmModel
 }
