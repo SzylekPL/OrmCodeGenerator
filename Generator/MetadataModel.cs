@@ -4,11 +4,11 @@ using System.Runtime.CompilerServices;
 
 namespace OrmGenerator;
 
-internal readonly struct MetadataModel(string name, string @namespace, ImmutableArray<(string, DataType)> properties) : IEquatable<MetadataModel>
+internal readonly struct MetadataModel(string name, string @namespace, ImmutableArray<(string, DbDataType)> properties) : IEquatable<MetadataModel>
 {
 	public readonly string Name = name;
 	public readonly string Namespace = @namespace;
-	public readonly ImmutableArray<(string Name, DataType Type)> Properties = properties;
+	public readonly ImmutableArray<(string Name, DbDataType Type)> Properties = properties;
 
 	public bool Equals(MetadataModel other)
 	{

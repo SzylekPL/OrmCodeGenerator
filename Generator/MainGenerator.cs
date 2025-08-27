@@ -98,13 +98,13 @@ public class MainGenerator : IIncrementalGenerator
 				transform: static (context, token) =>
 				{
 					INamedTypeSymbol @class = (INamedTypeSymbol)context.TargetSymbol;
-					ImmutableArray<(string, DataType)> prop = @class
+					ImmutableArray<(string, DbDataType)> prop = @class
 						.GetMembers()
 						.Where(static s => s is IPropertySymbol)
 						.Cast<IPropertySymbol>()
-						.Select(static p => Enum.TryParse(p.Type.Name, true, out DataType dataType)
+						.Select(static p => Enum.TryParse(p.Type.Name, true, out DbDataType dataType)
 								? (p.Name, dataType)
-								: (p.Name, DataType.Unknown))
+								: (p.Name, DbDataType.Unknown))
 						.ToImmutableArray();
 					return new MetadataModel(@class.Name, @class.ContainingNamespace.Name, prop);
 				}
@@ -125,10 +125,10 @@ public class MainGenerator : IIncrementalGenerator
 				{
 			""");
 
-			foreach ((string Name, DataType Type) prop in model.Properties)
+			foreach ((string Name, DbDataType Type) prop in model.Properties)
 			{
-				(string Name, DataType Type) = prop;
-				builder.AppendLine($"		{Name} = reader.Get{(Type == DataType.Single ? "Float" : Type.ToString())}(index++),");
+				(string Name, DbDataType Type) = prop;
+				builder.AppendLine($"		{Name} = reader.Get{(Type == DbDataType.Single ? "Float" : Type.ToString())}(index++),");
 			}
 
 			builder.AppendLine($$"""
@@ -151,17 +151,16 @@ public class MainGenerator : IIncrementalGenerator
 				transform: static (context, token) =>
 				{
 					INamedTypeSymbol @class = (INamedTypeSymbol)context.TargetSymbol;
-					ImmutableArray<(string, DataType, string?)> prop = @class
+					ImmutableArray<(string, DbDataType, string?)> prop = @class
 						.GetMembers()
-						.Where(static s => s is IPropertySymbol)
-						.Cast<IPropertySymbol>()
+						.OfType<IPropertySymbol>()
 						.Select(static p =>
 						{
-							(string, DataType, string?) result;
+							(string, DbDataType, string?) result;
 							ImmutableArray<AttributeData> attributeData = p.Type.GetAttributes();
-							result = Enum.TryParse(p.Type.Name, true, out DataType type)
+							result = Enum.TryParse(p.Type.Name, true, out DbDataType type)
 									? (p.Name, type, null)
-									: (p.Name, DataType.Unknown, p.Type.Name);
+									: (p.Name, DbDataType.Unknown, p.Type.Name);
 							return result;
 						})
 						.ToImmutableArray();
@@ -184,13 +183,13 @@ public class MainGenerator : IIncrementalGenerator
 				{
 			""");
 
-			foreach ((string Name, DataType Type, string? CustomType) prop in model.Properties)
+			foreach ((string Name, DbDataType Type, string? CustomType) prop in model.Properties)
 			{
-				(string Name, DataType Type, string? CustomType) = prop;
-				if (Type == DataType.Unknown)
+				(string Name, DbDataType Type, string? CustomType) = prop;
+				if (Type == DbDataType.Unknown)
 					builder.AppendLine($"		{Name} = {CustomType}.GetSingleModel(reader, ref index),");
 				else
-					builder.AppendLine($"		{Name} = reader.Get{(Type == DataType.Single ? "Float" : Type.ToString())}(index++),");
+					builder.AppendLine($"		{Name} = reader.Get{(Type == DbDataType.Single ? "Float" : Type.ToString())}(index++),");
 			}
 
 			builder.AppendLine($$"""

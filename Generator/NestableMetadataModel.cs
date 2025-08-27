@@ -3,11 +3,11 @@ using System.Collections.Immutable;
 
 namespace OrmGenerator;
 
-internal readonly struct NestableMetadataModel(string name, string @namespace, ImmutableArray<(string, DataType, string?)> properties) : IEquatable<NestableMetadataModel>
+internal readonly struct NestableMetadataModel(string name, string @namespace, ImmutableArray<(string, DbDataType, string?)> properties) : IEquatable<NestableMetadataModel>
 {
 	public readonly string Name = name;
 	public readonly string Namespace = @namespace;
-	public readonly ImmutableArray<(string Name, DataType Type, string? CustomType)> Properties = properties;
+	public readonly ImmutableArray<(string Name, DbDataType Type, string? CustomType)> Properties = properties;
 
 	public bool Equals(NestableMetadataModel other)
 	{

@@ -1,6 +1,6 @@
 ﻿namespace OrmGenerator;
 
-public enum DataType
+public enum DbDataType
 {
 	Unknown,
 	Boolean,
