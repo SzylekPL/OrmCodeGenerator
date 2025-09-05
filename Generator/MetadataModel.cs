@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Immutable;
-using System.Runtime.CompilerServices;
 
 namespace OrmGenerator;
 
@@ -12,7 +11,7 @@ internal readonly struct MetadataModel(string name, string @namespace, Immutable
 
 	public bool Equals(MetadataModel other)
 	{
-		if (Name != other.Name || Namespace != other.Namespace)
+		if (Name != other.Name || Namespace != other.Namespace || Properties.Length != other.Properties.Length)
 			return false;
 
 		for (int i = 0; i < Properties.Length; i++)

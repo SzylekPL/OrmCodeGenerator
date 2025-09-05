@@ -11,7 +11,7 @@ internal readonly struct NestableMetadataModel(string name, string @namespace, I
 
 	public bool Equals(NestableMetadataModel other)
 	{
-		if (Name != other.Name || Namespace != other.Namespace)
+		if (Name != other.Name || Namespace != other.Namespace || Properties.Length != other.Properties.Length)
 			return false;
 
 		for (int i = 0; i < Properties.Length; i++)
