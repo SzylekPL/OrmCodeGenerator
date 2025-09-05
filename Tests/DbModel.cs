@@ -1,4 +1,4 @@
-﻿using OrmCodeGenerator;
+﻿using OrmGenerator;
 namespace Tests;
 
 [NestableOrmModel]
@@ -15,7 +15,7 @@ public partial class DbModel
 		Row1: {Row1}
 		Point.X: {Point.X}
 		Point.Y: {Point.Y}
-		Row4: {Row1}
+		Row4: {Row4}
 		""";
 }
 

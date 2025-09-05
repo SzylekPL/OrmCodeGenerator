@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
+//TODO: Create the codefixes project
+
 namespace OrmGenerator;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

@@ -11,17 +11,30 @@ public class MainGenerator : IIncrementalGenerator
 {
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
-		context.RegisterMarkerAttributes(
-			("OrmCodeGenerator", "OrmModelAttribute", AttributeTargets.Class),
-			("OrmCodeGenerator", "NestableOrmModelAttribute", AttributeTargets.Class)
-		);
+		//context.RegisterMarkerAttributes(
+		//	("OrmCodeGenerator", "OrmModelAttribute", AttributeTargets.Class),
+		//	("OrmCodeGenerator", "NestableOrmModelAttribute", AttributeTargets.Class)
+		//);
 		context.RegisterPostInitializationOutput(static ctx =>
 		{
+			ctx.AddSource("OrmModelAttribute.g.cs",
+				"""
+				using System;
+				namespace OrmGenerator;
+
+				[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
+				internal class OrmModelAttribute : Attribute
+				{
+					internal bool GenerateToString {get; set;} = false;
+				}
+
+				internal sealed class NestableOrmModelAttribute : OrmModelAttribute;
+				""");
 			ctx.AddSource("IOrmModel.g.cs",
 				"""
 				using System.Data.Common;
-
 				namespace OrmGenerator;
+
 				public interface IOrmModel<TSelf>
 				{
 					internal static abstract TSelf GetSingleModel(DbDataReader reader);
@@ -32,7 +45,7 @@ public class MainGenerator : IIncrementalGenerator
 				"""
 				using System.Data;
 				using System.Data.Common;
-				using OrmGenerator;
+				namespace OrmGenerator;
 				
 				public static class DbCommandExtensions
 				{
@@ -93,7 +106,7 @@ public class MainGenerator : IIncrementalGenerator
 
 		IncrementalValuesProvider<MetadataModel> provider = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
-				"OrmCodeGenerator.OrmModelAttribute",
+				"OrmGenerator.OrmModelAttribute",
 				predicate: static (node, _) => true,
 				transform: static (context, token) =>
 				{
@@ -146,7 +159,7 @@ public class MainGenerator : IIncrementalGenerator
 
 		IncrementalValuesProvider<NestableMetadataModel> nestableProvider = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
-				"OrmCodeGenerator.NestableOrmModelAttribute",
+				"OrmGenerator.NestableOrmModelAttribute",
 				predicate: static (node, _) => true,
 				transform: static (context, token) =>
 				{

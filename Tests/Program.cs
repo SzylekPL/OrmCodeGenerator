@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 using Tests;
+using OrmGenerator;
 
 using SqliteConnection connection = new("Data Source=test.db");
 connection.Open();
