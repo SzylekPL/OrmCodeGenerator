@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using OrmGenerator.Models;
 using System;
 using System.Collections.Immutable;
 using System.Linq;
@@ -9,6 +10,8 @@ namespace OrmGenerator;
 [Generator]
 public class MainGenerator : IIncrementalGenerator
 {
+	private const string _baseMarker = "OrmGenerator.OrmModelAttribute";
+
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
 		//context.RegisterMarkerAttributes(
@@ -25,7 +28,7 @@ public class MainGenerator : IIncrementalGenerator
 				[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
 				internal class OrmModelAttribute : Attribute
 				{
-					internal bool GenerateToString {get; set;} = false;
+					public bool GenerateToString { get; set; } = false;
 				}
 
 				internal sealed class NestableOrmModelAttribute : OrmModelAttribute;
@@ -106,39 +109,44 @@ public class MainGenerator : IIncrementalGenerator
 
 		IncrementalValuesProvider<MetadataModel> provider = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
-				"OrmGenerator.OrmModelAttribute",
+				_baseMarker,
 				predicate: static (node, _) => true,
 				transform: static (context, token) =>
 				{
 					INamedTypeSymbol @class = (INamedTypeSymbol)context.TargetSymbol;
+					bool generateToString = GetToStringInfo(context);
 					ImmutableArray<(string, DbDataType)> prop = @class
 						.GetMembers()
-						.Where(static s => s is IPropertySymbol)
-						.Cast<IPropertySymbol>()
+						.OfType<IPropertySymbol>()
+						.Where(static p => p.DeclaredAccessibility != Accessibility.Private && p.SetMethod is not null)
 						.Select(static p => Enum.TryParse(p.Type.Name, true, out DbDataType dataType)
 								? (p.Name, dataType)
 								: (p.Name, DbDataType.Unknown))
 						.ToImmutableArray();
-					return new MetadataModel(@class.Name, @class.ContainingNamespace.Name, prop);
+					return new MetadataModel(@class.Name, @class.ContainingNamespace.Name, prop, generateToString);
 				}
 			);
 		context.RegisterSourceOutput(provider, static (spc, model) =>
 		{
 			StringBuilder builder = new();
+			(string name,
+			string @namespace,
+			bool generateToString,
+			ImmutableArray<(string Name, DbDataType Type)> properties) = model;
 
 			builder.AppendLine(
 			$$"""
 			using System.Data.Common;
 			using OrmGenerator;
 
-			namespace {{model.Namespace}};
-			partial class {{model.Name}} : IOrmModel<{{model.Name}}>
+			namespace {{@namespace}};
+			partial class {{name}} : IOrmModel<{{name}}>
 			{
-				public static {{model.Name}} GetSingleModel(DbDataReader reader, ref int index) => new()
+				public static {{name}} GetSingleModel(DbDataReader reader, ref int index) => new()
 				{
 			""");
 
-			foreach ((string Name, DbDataType Type) prop in model.Properties)
+			foreach ((string Name, DbDataType _) prop in properties)
 			{
 				(string Name, DbDataType Type) = prop;
 				builder.AppendLine($"		{Name} = reader.Get{(Type == DbDataType.Single ? "Float" : Type.ToString())}(index++),");
@@ -146,15 +154,25 @@ public class MainGenerator : IIncrementalGenerator
 
 			builder.AppendLine($$"""
 				};
-				public static {{model.Name}} GetSingleModel(DbDataReader reader)
+				public static {{name}} GetSingleModel(DbDataReader reader)
 				{
 					int a = 0;
 					return GetSingleModel(reader, ref a);
 				}
-			}
 			""");
+			if (model.GenerateToString)
+			{
+				builder.AppendLine($$""""
+						public override string ToString() =>
+							$"""
+					"""");
+				foreach ((string Name, DbDataType _) prop in properties)
+					builder.AppendLine($"		{prop.Name}: {{{prop.Name}}}");
+				builder.AppendLine("	\"\"\";");
+			}
+			builder.AppendLine("}");
 
-			spc.AddSource($"{model.Namespace}.{model.Name}.g.cs", builder.ToString());
+			spc.AddSource($"{@namespace}.{name}.g.cs", builder.ToString());
 		});
 
 		IncrementalValuesProvider<NestableMetadataModel> nestableProvider = context.SyntaxProvider
@@ -164,9 +182,11 @@ public class MainGenerator : IIncrementalGenerator
 				transform: static (context, token) =>
 				{
 					INamedTypeSymbol @class = (INamedTypeSymbol)context.TargetSymbol;
+					bool generateToString = GetToStringInfo(context);
 					ImmutableArray<(string, DbDataType, string?)> prop = @class
 						.GetMembers()
 						.OfType<IPropertySymbol>()
+						.Where(static p => p.DeclaredAccessibility != Accessibility.Private && p.SetMethod is not null)
 						.Select(static p =>
 						{
 							(string, DbDataType, string?) result;
@@ -177,26 +197,30 @@ public class MainGenerator : IIncrementalGenerator
 							return result;
 						})
 						.ToImmutableArray();
-					return new NestableMetadataModel(@class.Name, @class.ContainingNamespace.Name, prop);
+					return new NestableMetadataModel(@class.Name, @class.ContainingNamespace.Name, prop, generateToString);
 				}
 			);
 		context.RegisterSourceOutput(nestableProvider, static (spc, model) =>
 		{
 			StringBuilder builder = new();
+			(string name,
+			string @namespace,
+			bool generateToString,
+			ImmutableArray<(string Name, DbDataType Type, string? CustomType)> properties) = model;
 
 			builder.AppendLine(
 			$$"""
 			using System.Data.Common;
 			using OrmGenerator;
 
-			namespace {{model.Namespace}};
-			partial class {{model.Name}} : IOrmModel<{{model.Name}}>
+			namespace {{@namespace}};
+			partial class {{name}} : IOrmModel<{{name}}>
 			{
-				public static {{model.Name}} GetSingleModel(DbDataReader reader, ref int index) => new()
+				public static {{name}} GetSingleModel(DbDataReader reader, ref int index) => new()
 				{
 			""");
 
-			foreach ((string Name, DbDataType Type, string? CustomType) prop in model.Properties)
+			foreach ((string Name, DbDataType Type, string? CustomType) prop in properties)
 			{
 				(string Name, DbDataType Type, string? CustomType) = prop;
 				if (Type == DbDataType.Unknown)
@@ -207,15 +231,33 @@ public class MainGenerator : IIncrementalGenerator
 
 			builder.AppendLine($$"""
 				};
-				public static {{model.Name}} GetSingleModel(DbDataReader reader)
+				public static {{name}} GetSingleModel(DbDataReader reader)
 				{
 					int a = 0;
 					return GetSingleModel(reader, ref a);
 				}			
-			}
 			""");
+			if (model.GenerateToString)
+			{
+				builder.AppendLine($$""""
+						public override string ToString() =>
+							$"""
+					"""");
+				foreach ((string Name, DbDataType _, string? __) prop in properties)
+					builder.AppendLine($"		{prop.Name}: {{{prop.Name}}}");
+				builder.AppendLine("	\"\"\";");
+			}
+			builder.AppendLine("}");
 
-			spc.AddSource($"{model.Namespace}.{model.Name}.g.cs", builder.ToString());
+			spc.AddSource($"{@namespace}.{name}.g.cs", builder.ToString());
 		});
 	}
+
+	private static bool GetToStringInfo(GeneratorAttributeSyntaxContext context) => (bool)(context
+		.Attributes[0]
+		.NamedArguments
+		.FirstOrDefault()
+		.Value
+		.Value ?? false);
+	
 }
