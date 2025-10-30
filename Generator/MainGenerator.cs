@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using OrmGenerator.Models;
+using OrmGenerator.Utility;
 using System;
 using System.Collections.Immutable;
 using System.Linq;
@@ -14,10 +15,6 @@ public class MainGenerator : IIncrementalGenerator
 
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
-		//context.RegisterMarkerAttributes(
-		//	("OrmCodeGenerator", "OrmModelAttribute", AttributeTargets.Class),
-		//	("OrmCodeGenerator", "NestableOrmModelAttribute", AttributeTargets.Class)
-		//);
 		context.RegisterPostInitializationOutput(static ctx =>
 		{
 			ctx.AddSource("OrmModelAttribute.g.cs",
@@ -25,7 +22,7 @@ public class MainGenerator : IIncrementalGenerator
 				using System;
 				namespace OrmGenerator;
 
-				[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
+				[AttributeUsage(AttributeTargets.Class)]
 				internal class OrmModelAttribute : Attribute
 				{
 					public bool GenerateToString { get; set; } = false;
@@ -38,7 +35,7 @@ public class MainGenerator : IIncrementalGenerator
 				using System.Data.Common;
 				namespace OrmGenerator;
 
-				public interface IOrmModel<TSelf>
+				public interface IOrmModel<TSelf> where TSelf : class
 				{
 					internal static abstract TSelf GetSingleModel(DbDataReader reader);
 				}
@@ -46,29 +43,31 @@ public class MainGenerator : IIncrementalGenerator
 
 			ctx.AddSource("DbCommandExtensions.g.cs",
 				"""
+				#nullable enable
+
 				using System.Data;
 				using System.Data.Common;
 				namespace OrmGenerator;
 				
 				public static class DbCommandExtensions
 				{
-					public static T? GetSingle<T>(this DbCommand command) where T: IOrmModel<T>?
+					public static T? GetSingle<T>(this DbCommand command) where T: class, IOrmModel<T>
 					{
 						using DbDataReader reader = command.ExecuteReader(CommandBehavior.SingleRow);
 						return reader.Read() 
 							? T.GetSingleModel(reader) 
-							: default;
+							: null;
 					}
 
-					public static async Task<T?> GetSingleAsync<T>(this DbCommand command, CancellationToken token = default) where T: IOrmModel<T>?
+					public static async Task<T?> GetSingleAsync<T>(this DbCommand command, CancellationToken token = default) where T: class, IOrmModel<T>
 					{
 						using DbDataReader reader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, token);
 						return await reader.ReadAsync(token) 
 							? T.GetSingleModel(reader) 
-							: default;
+							: null;
 					}
 
-					public static List<T> GetListOf<T>(this DbCommand command) where T: IOrmModel<T>
+					public static List<T> GetListOf<T>(this DbCommand command) where T: class, IOrmModel<T>
 					{
 						List<T> result = [];
 						using DbDataReader reader = command.ExecuteReader();
@@ -78,7 +77,7 @@ public class MainGenerator : IIncrementalGenerator
 						return result;
 					}
 
-					public static async Task<List<T>> GetListOfAsync<T>(this DbCommand command, CancellationToken token = default) where T: IOrmModel<T>
+					public static async Task<List<T>> GetListOfAsync<T>(this DbCommand command, CancellationToken token = default) where T: class, IOrmModel<T>
 					{
 						List<T> result = [];
 						using DbDataReader reader = await command.ExecuteReaderAsync(token);
@@ -88,7 +87,7 @@ public class MainGenerator : IIncrementalGenerator
 						return result;
 					}
 
-					public static IEnumerable<T> GetEnumerableOf<T>(this DbCommand command) where T: IOrmModel<T>
+					public static IEnumerable<T> GetEnumerableOf<T>(this DbCommand command) where T: class, IOrmModel<T>
 					{
 						using DbDataReader reader = command.ExecuteReader();
 				
@@ -96,7 +95,7 @@ public class MainGenerator : IIncrementalGenerator
 							yield return T.GetSingleModel(reader);
 					}
 
-					public static async IAsyncEnumerable<T> GetAsyncEnumerableOf<T>(this DbCommand command, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken token = default) where T: IOrmModel<T>
+					public static async IAsyncEnumerable<T> GetAsyncEnumerableOf<T>(this DbCommand command, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken token = default) where T: class, IOrmModel<T>
 					{
 						using DbDataReader reader = await command.ExecuteReaderAsync(token);
 				
@@ -146,7 +145,7 @@ public class MainGenerator : IIncrementalGenerator
 				{
 			""");
 
-			foreach ((string Name, DbDataType _) prop in properties)
+			foreach ((string, DbDataType) prop in properties)
 			{
 				(string Name, DbDataType Type) = prop;
 				builder.AppendLine($"		{Name} = reader.Get{(Type == DbDataType.Single ? "Float" : Type.ToString())}(index++),");
@@ -156,8 +155,8 @@ public class MainGenerator : IIncrementalGenerator
 				};
 				public static {{name}} GetSingleModel(DbDataReader reader)
 				{
-					int a = 0;
-					return GetSingleModel(reader, ref a);
+					int index = 0;
+					return GetSingleModel(reader, ref index);
 				}
 			""");
 			if (model.GenerateToString)
@@ -166,7 +165,7 @@ public class MainGenerator : IIncrementalGenerator
 						public override string ToString() =>
 							$"""
 					"""");
-				foreach ((string Name, DbDataType _) prop in properties)
+				foreach ((string Name, DbDataType) prop in properties)
 					builder.AppendLine($"		{prop.Name}: {{{prop.Name}}}");
 				builder.AppendLine("	\"\"\";");
 			}
@@ -187,15 +186,10 @@ public class MainGenerator : IIncrementalGenerator
 						.GetMembers()
 						.OfType<IPropertySymbol>()
 						.Where(static p => p.DeclaredAccessibility != Accessibility.Private && p.SetMethod is not null)
-						.Select(static p =>
-						{
-							(string, DbDataType, string?) result;
-							ImmutableArray<AttributeData> attributeData = p.Type.GetAttributes();
-							result = Enum.TryParse(p.Type.Name, true, out DbDataType type)
-									? (p.Name, type, null)
-									: (p.Name, DbDataType.Unknown, p.Type.Name);
-							return result;
-						})
+						.Select(static p => Enum.TryParse(p.Type.Name, true, out DbDataType type)
+								? (p.Name, type, null)
+								: (p.Name, DbDataType.Unknown, p.Type.Name)
+						)
 						.ToImmutableArray();
 					return new NestableMetadataModel(@class.Name, @class.ContainingNamespace.Name, prop, generateToString);
 				}
@@ -220,7 +214,7 @@ public class MainGenerator : IIncrementalGenerator
 				{
 			""");
 
-			foreach ((string Name, DbDataType Type, string? CustomType) prop in properties)
+			foreach ((string, DbDataType, string?) prop in properties)
 			{
 				(string Name, DbDataType Type, string? CustomType) = prop;
 				if (Type == DbDataType.Unknown)
@@ -233,8 +227,8 @@ public class MainGenerator : IIncrementalGenerator
 				};
 				public static {{name}} GetSingleModel(DbDataReader reader)
 				{
-					int a = 0;
-					return GetSingleModel(reader, ref a);
+					int index = 0;
+					return GetSingleModel(reader, ref index);
 				}			
 			""");
 			if (model.GenerateToString)
@@ -243,7 +237,7 @@ public class MainGenerator : IIncrementalGenerator
 						public override string ToString() =>
 							$"""
 					"""");
-				foreach ((string Name, DbDataType _, string? __) prop in properties)
+				foreach ((string Name, DbDataType, string?) prop in properties)
 					builder.AppendLine($"		{prop.Name}: {{{prop.Name}}}");
 				builder.AppendLine("	\"\"\";");
 			}
@@ -253,11 +247,10 @@ public class MainGenerator : IIncrementalGenerator
 		});
 	}
 
-	private static bool GetToStringInfo(GeneratorAttributeSyntaxContext context) => (bool)(context
+	private static bool GetToStringInfo(in GeneratorAttributeSyntaxContext context) => (bool)(context
 		.Attributes[0]
 		.NamedArguments
 		.FirstOrDefault()
 		.Value
 		.Value ?? false);
-	
 }

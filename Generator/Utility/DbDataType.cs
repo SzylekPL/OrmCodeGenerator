@@ -1,4 +1,4 @@
-﻿namespace OrmGenerator;
+﻿namespace OrmGenerator.Utility;
 
 public enum DbDataType
 {

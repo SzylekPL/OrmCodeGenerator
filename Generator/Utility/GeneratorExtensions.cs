@@ -1,7 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using System;
 
-namespace OrmGenerator;
+namespace OrmGenerator.Utility;
 public static class GeneratorExtensions
 {
 	public static void RegisterMarkerAttributes(this IncrementalGeneratorInitializationContext context, params (string Namespace, string Name, AttributeTargets Targets)[] attributesData)

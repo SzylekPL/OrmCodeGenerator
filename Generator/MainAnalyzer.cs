@@ -1,17 +1,17 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using OrmGenerator.Utility;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-
-//TODO: Create the codefixes project
 
 namespace OrmGenerator;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class MainAnalyzer : DiagnosticAnalyzer
 {
-	private static readonly HashSet<string> DbDataTypes = new(typeof(DbDataType).GetEnumNames());
+	private static readonly HashSet<string> DbDataTypes = new(Enum.GetNames(typeof(DbDataType)));
 	private static readonly DiagnosticDescriptor NotMarkedRule = new(
 		id: "ORM001",
 		title: "Model must be marked",

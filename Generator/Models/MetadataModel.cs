@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OrmGenerator.Utility;
+using System;
 using System.Collections.Immutable;
 
 namespace OrmGenerator.Models;
