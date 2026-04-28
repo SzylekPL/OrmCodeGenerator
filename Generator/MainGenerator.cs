@@ -67,14 +67,7 @@ public sealed partial class MainGenerator : IIncrementalGenerator
 				builder.AppendLine($"		{Name} = reader.Get{(Type == DbDataType.Single ? "Float" : Type.ToString())}(index++),");
 			}
 
-			builder.AppendLine($$"""
-				};
-				public static {{name}} GetSingleModel(DbDataReader reader)
-				{
-					int index = 0;
-					return GetSingleModel(reader, ref index);
-				}
-			""");
+			builder.AppendLine(@"	};");
 			if (model.GenerateToString)
 			{
 				builder.AppendLine($$""""
