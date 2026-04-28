@@ -25,3 +25,6 @@ public partial class Point
 	public int X { get; set; }
 	public int Y { get; set; }
 }
+
+//[OrmModel]
+//sealed partial record RecordModel(string Name, int Age);

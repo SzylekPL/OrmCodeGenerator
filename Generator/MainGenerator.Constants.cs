@@ -38,7 +38,7 @@ public sealed partial class MainGenerator
 			/// This method is used internally by the generator and it's not advised to use it elsewhere.
 			/// </summary>
 			/// <typeparam name="TSelf">Model type returned from mapping</typeparam>
-			internal static abstract TSelf GetSingleModel(DbDataReader reader);
+			internal static abstract TSelf GetSingleModel(DbDataReader reader, ref int index);
 		}
 		""";
 	private const string _extensionsContent =
@@ -54,92 +54,101 @@ public sealed partial class MainGenerator
 				
 		public static class DbCommandExtensions
 		{
-			/// <summary>
-			/// Executes the query defined in the <paramref name="command"/> parameter and maps the result to a single instance of <typeparamref name="TModel"/>.
-			/// </summary>
-			/// <param name="command"> The command to source data from.</param>
-			/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
-			/// <returns>A mapped <typeparamref name="TModel"/> instance or <c>null</c> if the query result is empty.</returns>
-			public static TModel? GetSingle<TModel>(this DbCommand command) where TModel: class, IOrmModel<TModel>
+			private static TModel GetSingleModel<TModel>(DbDataReader reader) where TModel: class, IOrmModel<TModel>
 			{
-				using DbDataReader reader = command.ExecuteReader(CommandBehavior.SingleRow);
-				return reader.Read() 
-					? TModel.GetSingleModel(reader) 
-					: null;
+				int index = 0;
+				return TModel.GetSingleModel(reader, ref index);
 			}
-
-			/// <summary>
-			/// Asynchronously executes the query defined in the <paramref name="command"/> parameter and maps the result to a single instance of <typeparamref name="TModel"/>.
-			/// </summary>
-			/// <param name="command"> The command to source data from.</param>
-			/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
-			/// <returns>A <see cref="Task{TModel}"/> containing a mapped <typeparamref name="TModel"/> instance or <c>null</c> if the query result is empty.</returns>
-			public static async Task<TModel?> GetSingleAsync<TModel>(this DbCommand command, CancellationToken token = default) where TModel: class, IOrmModel<TModel>
+		
+			extension<TModel>(DbCommand command) where TModel: class, IOrmModel<TModel>
 			{
-				using DbDataReader reader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, token);
-				return await reader.ReadAsync(token) 
-					? TModel.GetSingleModel(reader) 
-					: null;
-			}
+				/// <summary>
+				/// Executes the query defined in the <paramref name="command"/> parameter and maps the result to a single instance of <typeparamref name="TModel"/>.
+				/// </summary>
+				/// <param name="command"> The command to source data from.</param>
+				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
+				/// <returns>A mapped <typeparamref name="TModel"/> instance or <c>null</c> if the query result is empty.</returns>
+				public TModel? GetSingle()
+				{
+					using DbDataReader reader = command.ExecuteReader(CommandBehavior.SingleRow);
+					return reader.Read() 
+						? GetSingleModel<TModel>(reader) 
+						: null;
+				}
 
-			/// <summary>
-			/// Executes the query defined in the <paramref name="command"/> parameter, maps the results and returns them as a <see cref="List{}"/> of <typeparamref name="TModel"/>.
-			/// </summary>
-			/// <param name="command"> The command to source data from.</param>
-			/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
-			/// <returns>A <see cref="List{}" /> of mapped <typeparamref name="TModel"/>s.</returns>
-			public static List<TModel> GetListOf<TModel>(this DbCommand command) where TModel: class, IOrmModel<TModel>
-			{
-				List<TModel> result = [];
-				using DbDataReader reader = command.ExecuteReader();
+				/// <summary>
+				/// Asynchronously executes the query defined in the <paramref name="command"/> parameter and maps the result to a single instance of <typeparamref name="TModel"/>.
+				/// </summary>
+				/// <param name="command"> The command to source data from.</param>
+				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
+				/// <returns>A <see cref="Task{TModel}"/> containing a mapped <typeparamref name="TModel"/> instance or <c>null</c> if the query result is empty.</returns>
+				public async Task<TModel?> GetSingleAsync(CancellationToken token = default)
+				{
+					using DbDataReader reader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, token);
+					return await reader.ReadAsync(token) 
+						? GetSingleModel<TModel>(reader) 
+						: null;
+				}
+
+				/// <summary>
+				/// Executes the query defined in the <paramref name="command"/> parameter, maps the results and returns them as a <see cref="List{}"/> of <typeparamref name="TModel"/>.
+				/// </summary>
+				/// <param name="command"> The command to source data from.</param>
+				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
+				/// <returns>A <see cref="List{}" /> of mapped <typeparamref name="TModel"/>s.</returns>
+				public List<TModel> GetListOf()
+				{
+					List<TModel> result = [];
+					using DbDataReader reader = command.ExecuteReader();
 				
-				while(reader.Read())
-					result.Add(TModel.GetSingleModel(reader));
-				return result;
-			}
+					while(reader.Read())
+						result.Add(GetSingleModel<TModel>(reader));
+					return result;
+				}
 
-			/// <summary>
-			/// Asynchronously executes the query defined in the <paramref name="command"/> parameter, maps the results and returns them as a <see cref="Task{}"/> of <see cref="List{}"/> of <typeparamref name="TModel"/>.
-			/// </summary>
-			/// <param name="command"> The command to source data from.</param>
-			/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
-			/// <returns>A <see cref="Task{TModel}"/> containing a <see cref="List{}" /> of mapped <typeparamref name="TModel"/>s.</returns>
-			public static async Task<List<TModel>> GetListOfAsync<TModel>(this DbCommand command, CancellationToken token = default) where TModel: class, IOrmModel<TModel>
-			{
-				List<TModel> result = [];
-				using DbDataReader reader = await command.ExecuteReaderAsync(token);
+				/// <summary>
+				/// Asynchronously executes the query defined in the <paramref name="command"/> parameter, maps the results and returns them as a <see cref="Task{}"/> of <see cref="List{}"/> of <typeparamref name="TModel"/>.
+				/// </summary>
+				/// <param name="command"> The command to source data from.</param>
+				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
+				/// <returns>A <see cref="Task{TModel}"/> containing a <see cref="List{}" /> of mapped <typeparamref name="TModel"/>s.</returns>
+				public async Task<List<TModel>> GetListOfAsync(CancellationToken token = default)
+				{
+					List<TModel> result = [];
+					using DbDataReader reader = await command.ExecuteReaderAsync(token);
 				
-				while(await reader.ReadAsync(token))
-					result.Add(TModel.GetSingleModel(reader));
-				return result;
-			}
+					while(await reader.ReadAsync(token))
+						result.Add(GetSingleModel<TModel>(reader));
+					return result;
+				}
 
-			/// <summary>
-			/// Executes the query defined in the <paramref name="command"/> parameter, maps the results and returns them as a lazily evaluated <see cref="IEnumerable{}"/> of <typeparamref name="TModel"/>.
-			/// </summary>
-			/// <param name="command"> The command to source data from.</param>
-			/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
-			/// <returns>A lazily evaluated <see cref="IEnumerable{}"/> of mapped <typeparamref name="TModel"/>s.</returns>
-			public static IEnumerable<TModel> GetEnumerableOf<TModel>(this DbCommand command) where TModel: class, IOrmModel<TModel>
-			{
-				using DbDataReader reader = command.ExecuteReader();
+				/// <summary>
+				/// Executes the query defined in the <paramref name="command"/> parameter, maps the results and returns them as a lazily evaluated <see cref="IEnumerable{}"/> of <typeparamref name="TModel"/>.
+				/// </summary>
+				/// <param name="command"> The command to source data from.</param>
+				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
+				/// <returns>A lazily evaluated <see cref="IEnumerable{}"/> of mapped <typeparamref name="TModel"/>s.</returns>
+				public IEnumerable<TModel> GetEnumerableOf()
+				{
+					using DbDataReader reader = command.ExecuteReader();
 				
-				while(reader.Read())
-					yield return TModel.GetSingleModel(reader);
-			}
+					while(reader.Read())
+						yield return GetSingleModel<TModel>(reader);
+				}
 
-			/// <summary>
-			/// Asynchronously executes the query defined in the <paramref name="command"/> parameter, maps the results and returns them as a lazily evaluated <see cref="IAsyncEnumerable{}"/> of <typeparamref name="TModel"/>.
-			/// </summary>
-			/// <param name="command"> The command to source data from.</param>
-			/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
-			/// <returns>A lazily evaluated <see cref="IAsyncEnumerable{}"/> of mapped <typeparamref name="TModel"/>s.</returns>
-			public static async IAsyncEnumerable<TModel> GetAsyncEnumerableOf<TModel>(this DbCommand command, [EnumeratorCancellation] CancellationToken token = default) where TModel: class, IOrmModel<TModel>
-			{
-				using DbDataReader reader = await command.ExecuteReaderAsync(token);
+				/// <summary>
+				/// Asynchronously executes the query defined in the <paramref name="command"/> parameter, maps the results and returns them as a lazily evaluated <see cref="IAsyncEnumerable{}"/> of <typeparamref name="TModel"/>.
+				/// </summary>
+				/// <param name="command"> The command to source data from.</param>
+				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
+				/// <returns>A lazily evaluated <see cref="IAsyncEnumerable{}"/> of mapped <typeparamref name="TModel"/>s.</returns>
+				public async IAsyncEnumerable<TModel> GetAsyncEnumerableOf([EnumeratorCancellation] CancellationToken token = default)
+				{
+					using DbDataReader reader = await command.ExecuteReaderAsync(token);
 				
-				while(await reader.ReadAsync(token))
-					yield return TModel.GetSingleModel(reader);
+					while(await reader.ReadAsync(token))
+						yield return GetSingleModel<TModel>(reader);
+				}
 			}
 		}
 		""";
