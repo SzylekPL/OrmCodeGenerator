@@ -40,6 +40,17 @@ public sealed partial class MainGenerator
 			/// <typeparam name="TSelf">Model type returned from mapping</typeparam>
 			internal static abstract TSelf GetSingleModel(DbDataReader reader, ref int index);
 		}
+		public static class ModelExtensions
+		{
+			extension<TModel>(TModel) where TModel: class, IOrmModel<TModel>
+			{
+				public static TModel GetSingleModel(DbDataReader reader)
+				{
+					int index = 0;
+					return TModel.GetSingleModel(reader, ref index);
+				}
+			}
+		}
 		""";
 	private const string _extensionsContent =
 		"""
