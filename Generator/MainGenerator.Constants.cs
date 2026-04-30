@@ -9,11 +9,26 @@ public sealed partial class MainGenerator
 		using System;
 		namespace OrmGenerator;
 
+		/// <summary>
+		/// Used to mark models for database mapping generation.
+		/// Requires the type to be defined as <c>partial</c>.
+		/// </summary>
 		[AttributeUsage(AttributeTargets.Class)]
 		internal sealed class OrmModelAttribute : Attribute
 		{
-			public bool GenerateToString { get; set; } = false;
+			/// <summary>
+			/// Setting this property to <c>true</c> will enforce all properties to be native database types.
+			/// This may result in a slight improvement in the generator's performance.
+			/// </summary>
+			/// <remarks>
+			/// NOTE: Even with this property set to <c>false</c>, the optimization will take place provided that
+			/// type requirements are met.
+			/// </remarks>
 			public bool DisableNesting { get; set; } = false;
+			/// <summary>
+			/// Determines whether the generator will emit a simple <c>ToString()</c> override for the model or not.
+			/// </summary>
+			public bool GenerateToString { get; set; } = false;
 		}
 		""";
 	private const string _interfaceContent =
