@@ -1,7 +1,7 @@
 ﻿using OrmGenerator;
 namespace Tests;
 
-[NestableOrmModel(GenerateToString = true)]
+[OrmModel(GenerateToString = true, DisableNesting = false)]
 public partial class DbModel
 {
 	public int Id { get; set; }

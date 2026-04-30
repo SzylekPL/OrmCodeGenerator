@@ -2,7 +2,6 @@
 
 public enum DbDataType
 {
-	Unknown,
 	Boolean,
 	Byte,
 	Char,
@@ -16,4 +15,15 @@ public enum DbDataType
 	Int64,
 	String,
 	TimeSpan,
+}
+public static class DbDataTypeExtensions
+{
+	extension(DbDataType type)
+	{
+		public string CsString => type switch
+		{
+			DbDataType.Single => "float",
+			_ => type.ToString()
+		};
+	}
 }
