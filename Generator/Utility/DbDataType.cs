@@ -22,7 +22,7 @@ public static class DbDataTypeExtensions
 	{
 		public string CsString => type switch
 		{
-			DbDataType.Single => "float",
+			DbDataType.Single => "Float",
 			_ => type.ToString()
 		};
 	}

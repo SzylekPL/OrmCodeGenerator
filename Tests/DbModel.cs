@@ -20,11 +20,7 @@ public partial class DbModel
 }
 
 [OrmModel]
-public partial class Point
-{
-	public int X { get; set; }
-	public int Y { get; set; }
-}
+public partial record Point(int X, int Y);
 
 //[OrmModel]
 //sealed partial record RecordModel(string Name, int Age);

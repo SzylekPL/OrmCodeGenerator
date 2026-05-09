@@ -16,7 +16,7 @@ public sealed partial class MainGenerator : IIncrementalGenerator
 			ctx.AddSource("DbCommandExtensions.g.cs", _extensionsContent);
 		});
 
-		IncrementalValuesProvider<ModelDeclaration> provider = context.SyntaxProvider
+		IncrementalValuesProvider<ModelDeclaration> provider = context.SyntaxProvider	
 			.ForAttributeWithMetadataName(
 				"OrmGenerator.OrmModelAttribute",
 				predicate: static (node, _) => node is ClassDeclarationSyntax or RecordDeclarationSyntax,
