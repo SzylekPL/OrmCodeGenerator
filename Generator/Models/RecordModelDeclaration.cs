@@ -44,8 +44,9 @@ internal sealed class RecordModelDeclaration(string name, string @namespace, Imm
 			foreach (StandardProperty param in _parameters)
 				builder.AppendLine($@"		reader.Get{param.Type.CsString}(index++),");
 
+			builder.Remove(builder.Length - 3, 3)
+				.AppendLine(@"	);");
 
-			builder.AppendLine(@"	);");
 			if (_generateToString)
 			{
 				builder.AppendLine($$""""

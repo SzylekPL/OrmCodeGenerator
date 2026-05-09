@@ -52,7 +52,9 @@ internal sealed class NestableRecordModelDeclaration(string name, string @namesp
 				}
 			}
 
-			builder.AppendLine(@"	);");
+			builder.Remove(builder.Length - 3, 3)
+				.AppendLine(@"	);");
+
 			if (_generateToString)
 			{
 				builder.AppendLine($$""""

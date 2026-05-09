@@ -11,24 +11,34 @@ public sealed partial class MainGenerator
 
 		/// <summary>
 		/// Used to mark models for database mapping generation.
-		/// Requires the type to be defined as <c>partial</c>.
+		/// Requires the marked type to be defined as <c>partial</c> to work.
 		/// </summary>
 		[AttributeUsage(AttributeTargets.Class)]
-		internal sealed class OrmModelAttribute : Attribute
+		internal sealed class OrmModelAttribute(ModelOptions options = ModelOptions.None) : Attribute;
+		[Flags]
+		internal enum ModelOptions
 		{
+			None = 0,
 			/// <summary>
-			/// Setting this property to <c>true</c> will enforce all properties to be native database types.
+			/// Using this flag will enforce all properties to be native database types.
 			/// This may result in a slight improvement in the generator's performance.
 			/// </summary>
 			/// <remarks>
-			/// NOTE: Even with this property set to <c>false</c>, the optimization will take place provided that
+			/// If the flag is  not present, the optimization will still take place provided that
 			/// type requirements are met.
 			/// </remarks>
-			public bool DisableNesting { get; set; } = false;
+			DisableNesting = 1 << 0,
+			/// <summary>
+			/// Using this flag will make the generator use the type's primary constructor for mapping instead of all suitable properties.
+			/// </summary>
+			/// <remarks>
+			/// Record types will always behave as if this flag was enabled.
+			/// </remarks>
+			UsePrimaryConstructor = 1 << 1,
 			/// <summary>
 			/// Determines whether the generator will emit a simple <c>ToString()</c> override for the model or not.
 			/// </summary>
-			public bool GenerateToString { get; set; } = false;
+			GenerateToString = 1 << 2,
 		}
 		""";
 	private const string _interfaceContent =

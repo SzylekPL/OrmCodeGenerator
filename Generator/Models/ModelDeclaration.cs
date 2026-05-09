@@ -18,21 +18,14 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 	public static ModelDeclaration Create(in GeneratorAttributeSyntaxContext context)
 	{
 		INamedTypeSymbol type = (INamedTypeSymbol)context.TargetSymbol;
-		bool generateToString = GetBoolAttributeProperty(context, "GenerateToString");
-		bool disableNesting = GetBoolAttributeProperty(context, "DisableNesting");
+		ModelOptions options = context.GetAttributeConstructorArgument<ModelOptions>(0);
 
-
-		if (type.IsRecord)
-		{
-			return CreateRecord(context, type, generateToString, disableNesting);
-		}
-		else
-		{
-			return CreateClass(type, generateToString, disableNesting);
-		}
+		return type.IsRecord || options.HasFlag(ModelOptions.UsePrimaryConstructor)
+			? CreateRecord(context, type, options) 
+			: CreateClass(type, options);
 	}
 
-	private static ModelDeclaration CreateRecord(in GeneratorAttributeSyntaxContext context,  INamedTypeSymbol type, bool generateToString, bool disableNesting)
+	private static ModelDeclaration CreateRecord(in GeneratorAttributeSyntaxContext context,  INamedTypeSymbol type, ModelOptions options)
 	{
 		SemanticModel semanticModel = context.SemanticModel;
 			ImmutableArray<IParameterSymbol> allParameters = ((RecordDeclarationSyntax)context.TargetNode)
@@ -42,12 +35,12 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 			.ToImmutableArray() ?? [];
 
 		//todo: record handling
-		if (disableNesting || allParameters.All(p => Constants.DbDataTypes.Contains(p.Type.Name)))
+		if (options.HasFlag(ModelOptions.DisableNesting) || allParameters.All(p => Constants.DbDataTypes.Contains(p.Type.Name)))
 		{
 			ImmutableArray<StandardProperty> prop = allParameters
 				.Select(static p => new StandardProperty(p.Name, (DbDataType)Enum.Parse(typeof(DbDataType), p.Type.Name)))
 				.ToImmutableArray();
-			return new RecordModelDeclaration(type.Name, type.ContainingNamespace.Name, prop, generateToString);
+			return new RecordModelDeclaration(type.Name, type.ContainingNamespace.Name, prop, options.HasFlag(ModelOptions.GenerateToString));
 		}
 
 		ImmutableArray<IProperty> props = allParameters
@@ -55,10 +48,10 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 					? new StandardProperty(p.Name, type)
 					: new CustomProperty(p.Name, p.Type.Name)))
 				.ToImmutableArray();
-		return new NestableRecordModelDeclaration(type.Name, type.ContainingNamespace.Name, props, generateToString);
+		return new NestableRecordModelDeclaration(type.Name, type.ContainingNamespace.Name, props, options.HasFlag(ModelOptions.GenerateToString));
 	}
 
-	private static ModelDeclaration CreateClass(INamedTypeSymbol @class, bool generateToString, bool disableNesting)
+	private static ModelDeclaration CreateClass(INamedTypeSymbol @class, ModelOptions options)
 	{
 		ImmutableArray<IPropertySymbol> allProperties = @class
 					.GetMembers()
@@ -67,12 +60,12 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 					.ToImmutableArray();
 
 		//todo: record handling
-		if (disableNesting || allProperties.All(p => Constants.DbDataTypes.Contains(p.Type.Name)))
+		if (options.HasFlag(ModelOptions.DisableNesting) || allProperties.All(p => Constants.DbDataTypes.Contains(p.Type.Name)))
 		{
 			ImmutableArray<StandardProperty> prop = allProperties
 				.Select(static p => new StandardProperty(p.Name, (DbDataType)Enum.Parse(typeof(DbDataType), p.Type.Name)))
 				.ToImmutableArray();
-			return new ClassModelDeclaration(@class.Name, @class.ContainingNamespace.Name, prop, generateToString);
+			return new ClassModelDeclaration(@class.Name, @class.ContainingNamespace.Name, prop, options.HasFlag(ModelOptions.GenerateToString));
 		}
 
 		ImmutableArray<IProperty> props = allProperties
@@ -80,17 +73,10 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 					? new StandardProperty(p.Name, type)
 					: new CustomProperty(p.Name, p.Type.Name)))
 				.ToImmutableArray();
-		return new NestableClassModelDeclaration(@class.Name, @class.ContainingNamespace.Name, props, generateToString);
+		return new NestableClassModelDeclaration(@class.Name, @class.ContainingNamespace.Name, props, options.HasFlag(ModelOptions.GenerateToString));
 	}
 
 	public string FileName => $"{_namespace}.{_name}.g.cs";
 	public abstract bool Equals(ModelDeclaration other);
 	public abstract string SourceCode { get; }
-
-	private static bool GetBoolAttributeProperty(in GeneratorAttributeSyntaxContext context, string property) => (bool)(context
-	.Attributes[0]
-	.NamedArguments
-	.FirstOrDefault(p => p.Key == property)
-	.Value
-	.Value ?? false);
 }

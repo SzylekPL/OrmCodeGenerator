@@ -6,11 +6,6 @@ using SqliteConnection connection = new("Data Source=test.db");
 connection.Open();
 using SqliteCommand command = new("SELECT * FROM TestTable;", connection);
 
-using SqliteDataReader reader = command.ExecuteReader();
-
-DbModel? dbModel = await command.GetSingleAsync<DbModel>();
-
-Console.WriteLine(dbModel);
 List<DbModel> models = await command.GetListOfAsync<DbModel>();
 
 foreach (DbModel model in models)
