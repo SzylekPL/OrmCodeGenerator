@@ -5,7 +5,6 @@ using OrmGenerator.Utility;
 using System;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Xml.Linq;
 
 namespace OrmGenerator.Models;
 
@@ -15,28 +14,31 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 	private protected readonly string _namespace = @namespace;
 	private protected readonly bool _generateToString = generateToString;
 
-	public static ModelDeclaration Create(in GeneratorAttributeSyntaxContext context)
+	public static ModelDeclaration? Create(in GeneratorAttributeSyntaxContext context)
 	{
 		INamedTypeSymbol type = (INamedTypeSymbol)context.TargetSymbol;
 		ModelOptions options = context.GetAttributeConstructorArgument<ModelOptions>(0);
 
 		return type.IsRecord || options.HasFlag(ModelOptions.UsePrimaryConstructor)
-			? CreateRecord(context, type, options) 
+			? CreateRecord(context, type, options)
 			: CreateClass(type, options);
 	}
 
-	private static ModelDeclaration CreateRecord(in GeneratorAttributeSyntaxContext context,  INamedTypeSymbol type, ModelOptions options)
+	private static ModelDeclaration? CreateRecord(in GeneratorAttributeSyntaxContext context, INamedTypeSymbol type, ModelOptions options)
 	{
 		SemanticModel semanticModel = context.SemanticModel;
-			ImmutableArray<IParameterSymbol> allParameters = ((RecordDeclarationSyntax)context.TargetNode)
+		ImmutableArray<IParameterSymbol> allParameters = ((RecordDeclarationSyntax)context.TargetNode)
 			?.ParameterList
 			?.Parameters
 			.Select(p => (IParameterSymbol)semanticModel.GetDeclaredSymbol(p)!)
 			.ToImmutableArray() ?? [];
 
 		//todo: record handling
-		if (options.HasFlag(ModelOptions.DisableNesting) || allParameters.All(p => Constants.DbDataTypes.Contains(p.Type.Name)))
+		bool primitiveOnly = allParameters.All(p => DbDataType.Values.Contains(p.Type.Name));
+		if (options.HasFlag(ModelOptions.DisableNesting) || primitiveOnly)
 		{
+			if (options.HasFlag(ModelOptions.DisableNesting) != primitiveOnly)
+				return null;
 			ImmutableArray<StandardProperty> prop = allParameters
 				.Select(static p => new StandardProperty(p.Name, (DbDataType)Enum.Parse(typeof(DbDataType), p.Type.Name)))
 				.ToImmutableArray();
@@ -51,7 +53,7 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 		return new NestableRecordModelDeclaration(type.Name, type.ContainingNamespace.Name, props, options.HasFlag(ModelOptions.GenerateToString));
 	}
 
-	private static ModelDeclaration CreateClass(INamedTypeSymbol @class, ModelOptions options)
+	private static ModelDeclaration? CreateClass(INamedTypeSymbol @class, ModelOptions options)
 	{
 		ImmutableArray<IPropertySymbol> allProperties = @class
 					.GetMembers()
@@ -60,7 +62,7 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 					.ToImmutableArray();
 
 		//todo: record handling
-		if (options.HasFlag(ModelOptions.DisableNesting) || allProperties.All(p => Constants.DbDataTypes.Contains(p.Type.Name)))
+		if (options.HasFlag(ModelOptions.DisableNesting) || allProperties.All(p => DbDataType.Values.Contains(p.Type.Name)))
 		{
 			ImmutableArray<StandardProperty> prop = allProperties
 				.Select(static p => new StandardProperty(p.Name, (DbDataType)Enum.Parse(typeof(DbDataType), p.Type.Name)))

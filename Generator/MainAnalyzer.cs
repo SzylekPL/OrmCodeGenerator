@@ -1,94 +1,57 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using OrmGenerator.Utility;
-using System;
 using System.Collections.Immutable;
 using System.Linq;
+using static Shared.ProjectDiagnostics;
 
 namespace OrmGenerator;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class MainAnalyzer : DiagnosticAnalyzer
 {
-	private static readonly DiagnosticDescriptor NotMarkedRule = new(
-		id: "ORM001",
-		title: "Model must be marked",
-		messageFormat: "The type {0} of property {1} must be a marked model",
-		category: "Syntax",
-		description: "The property is neither a standard database type, nor a model marked with OrmModelAttribute or NestableOrmModelAttribute.",
-		defaultSeverity: DiagnosticSeverity.Error,
-		isEnabledByDefault: true
-	);
-	private static readonly DiagnosticDescriptor NonBasicRule = new(
-		id: "ORM002",
-		title: "Nestable not necessary",
-		messageFormat: "The model of type {0} doesn't contain other models and shouldn't be nestable",
-		category: "Syntax",
-		description: "The type doesn't contain other models in it's definition. Consider changing the attribute from NestableOrmModelAttribute to OrmModelAttribute.",
-		defaultSeverity: DiagnosticSeverity.Info,
-		isEnabledByDefault: true
-	);
-	private static readonly DiagnosticDescriptor NonNestableRule = new(
-		id: "ORM003",
-		title: "Nestable required",
-		messageFormat: "The model of type {0} isn't nestable and mustn't contain other models",
-		category: "Syntax",
-		description: "The type isn't nestable, yet it contains other models in it's definition. Change the attribute from OrmModelAttribute to NestableOrmModelAttribute or remove unsupported properties.",
-		defaultSeverity: DiagnosticSeverity.Error,
-		isEnabledByDefault: true
-	);
 
-	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [NotMarkedRule, NonBasicRule, NonNestableRule];
+	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => DefinedDiagnostics;
 
 	public override void Initialize(AnalysisContext context)
 	{
 		context.EnableConcurrentExecution();
 		context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-		//context.RegisterSymbolAction(static ctx =>
-		//{
-		//	IPropertySymbol property = (IPropertySymbol)ctx.Symbol;
+		context.RegisterSymbolAction(static ctx =>
+		{
+			INamedTypeSymbol type = (INamedTypeSymbol)ctx.Symbol;
 
-		//	if (Globals.DbDataTypes.Contains(property.Type.Name))
-		//		return;
+			AttributeData? attribute = type
+				.GetAttributes()
+				.FirstOrDefault(static attr => attr.AttributeClass?.Name == "OrmModelAttribute");
 
-		//	if (property
-		//		.Type
-		//		.GetAttributes()
-		//		.Any(static attr => attr.AttributeClass?.Name is "OrmModelAttribute" or "NestableOrmModelAttribute"))
+			if (attribute is null) return;
 
-		//		return;
+			ModelOptions options = (ModelOptions)attribute.ConstructorArguments[0].Value!; //null will default to ModelOptions.None
+			if (!options.HasFlag(ModelOptions.DisableNesting))
+				return;
 
-		//	Diagnostic diagnostic = Diagnostic.Create(NotMarkedRule, property.Locations[0], property.Type.Name, property.Name);
-		//	ctx.ReportDiagnostic(diagnostic);
+			if (type.IsRecord || options.HasFlag(ModelOptions.UsePrimaryConstructor))
+			{
+				//todo: check if this even works for records
+				IMethodSymbol? ctor = type.InstanceConstructors
+					.FirstOrDefault(static c => c.IsImplicitlyDeclared && c.Parameters.Length != 0);
 
-		//}, SymbolKind.Property);
+				if (ctor is null)
+				{
+					ctx.ReportDiagnostic(Diagnostic.Create(_ctorNotSuitableRule, type.Locations[0], type.Name));
+					return;
+				}
 
-		//context.RegisterSymbolAction(static ctx =>
-		//{
-		//	INamedTypeSymbol namedType = (INamedTypeSymbol)ctx.Symbol;
+				foreach (IParameterSymbol param in ctor.Parameters)
+					if (!DbDataType.Values.Contains(param.Type.Name))
+						ctx.ReportDiagnostic(Diagnostic.Create(_notNestableRule, type.Locations[0], type.Name));
+			}
+			foreach (IPropertySymbol property in type.GetMembers().OfType<IPropertySymbol>())
+				if (!DbDataType.Values.Contains(property.Type.Name))
+					ctx.ReportDiagnostic(Diagnostic.Create(_notNestableRule, type.Locations[0], type.Name));
 
-		//	ImmutableArray<AttributeData> attributeData = namedType.GetAttributes();
-		//	if (attributeData.Any(static attr => attr.AttributeClass?.Name == "NestableOrmModelAttribute"))
-		//	{
-		//		foreach (IPropertySymbol property in namedType.GetMembers().OfType<IPropertySymbol>())
-		//			if (!Globals.DbDataTypes.Contains(property.Type.Name))
-		//				return;
-
-		//		Diagnostic diagnostic = Diagnostic.Create(NonBasicRule, namedType.Locations[0], namedType.Name);
-		//		ctx.ReportDiagnostic(diagnostic);
-		//	}
-		//	else if (attributeData.Any(static attr => attr.AttributeClass?.Name == "OrmModelAttribute"))
-		//	{
-		//		foreach (IPropertySymbol property in namedType.GetMembers().OfType<IPropertySymbol>())
-		//			if (!Globals.DbDataTypes.Contains(property.Type.Name))
-		//			{
-		//				Diagnostic diagnostic = Diagnostic.Create(NonNestableRule, namedType.Locations[0], namedType.Name);
-		//				ctx.ReportDiagnostic(diagnostic);
-		//				return;
-		//			}
-		//	}
-
-		//}, SymbolKind.NamedType);
+		}, SymbolKind.NamedType);
 	}
 }

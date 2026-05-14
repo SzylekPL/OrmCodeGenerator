@@ -1,4 +1,6 @@
-﻿namespace OrmGenerator.Utility;
+﻿using System.Collections.Frozen;
+
+namespace OrmGenerator.Utility;
 
 public enum DbDataType
 {
@@ -25,5 +27,6 @@ public static class DbDataTypeExtensions
 			DbDataType.Single => "Float",
 			_ => type.ToString()
 		};
+		public static FrozenSet<string> Values => Enum.GetNames(typeof(DbDataType)).ToFrozenSet();
 	}
 }
