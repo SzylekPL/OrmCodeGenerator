@@ -1,7 +1,9 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using OrmGenerator.Models.Field;
 using OrmGenerator.Models.Property;
 using OrmGenerator.Utility;
+using Shared;
 using System;
 using System.Collections.Immutable;
 using System.Linq;
@@ -39,18 +41,18 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 		{
 			if (options.HasFlag(ModelOptions.DisableNesting) != primitiveOnly)
 				return null;
-			ImmutableArray<StandardProperty> prop = allParameters
-				.Select(static p => new StandardProperty(p.Name, (DbDataType)Enum.Parse(typeof(DbDataType), p.Type.Name)))
+			ImmutableArray<NativeField> prop = allParameters
+				.Select(static p => new NativeField(p.Name, (DbDataType)Enum.Parse(typeof(DbDataType), p.Type.Name)))
 				.ToImmutableArray();
-			return new RecordModelDeclaration(type.Name, type.ContainingNamespace.Name, prop, options.HasFlag(ModelOptions.GenerateToString));
+			return new ConstructorModel(type.Name, type.ContainingNamespace.Name, prop, options.HasFlag(ModelOptions.GenerateToString));
 		}
 
-		ImmutableArray<IProperty> props = allParameters
-				.Select(static p => (IProperty)(Enum.TryParse(p.Type.Name, out DbDataType type)
-					? new StandardProperty(p.Name, type)
-					: new CustomProperty(p.Name, p.Type.Name)))
+		ImmutableArray<IField> props = allParameters
+				.Select(static p => (IField)(Enum.TryParse(p.Type.Name, out DbDataType type)
+					? new NativeField(p.Name, type)
+					: new CustomField(p.Name, p.Type.Name)))
 				.ToImmutableArray();
-		return new NestableRecordModelDeclaration(type.Name, type.ContainingNamespace.Name, props, options.HasFlag(ModelOptions.GenerateToString));
+		return new NestableConstructorModel(type.Name, type.ContainingNamespace.Name, props, options.HasFlag(ModelOptions.GenerateToString));
 	}
 
 	private static ModelDeclaration? CreateClass(INamedTypeSymbol @class, ModelOptions options)
@@ -64,18 +66,18 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 		//todo: record handling
 		if (options.HasFlag(ModelOptions.DisableNesting) || allProperties.All(p => DbDataType.Values.Contains(p.Type.Name)))
 		{
-			ImmutableArray<StandardProperty> prop = allProperties
-				.Select(static p => new StandardProperty(p.Name, (DbDataType)Enum.Parse(typeof(DbDataType), p.Type.Name)))
+			ImmutableArray<NativeField> prop = allProperties
+				.Select(static p => new NativeField(p.Name, (DbDataType)Enum.Parse(typeof(DbDataType), p.Type.Name)))
 				.ToImmutableArray();
-			return new ClassModelDeclaration(@class.Name, @class.ContainingNamespace.Name, prop, options.HasFlag(ModelOptions.GenerateToString));
+			return new PropertyModel(@class.Name, @class.ContainingNamespace.Name, prop, options.HasFlag(ModelOptions.GenerateToString));
 		}
 
-		ImmutableArray<IProperty> props = allProperties
-				.Select(static p => (IProperty)(Enum.TryParse(p.Type.Name, out DbDataType type)
-					? new StandardProperty(p.Name, type)
-					: new CustomProperty(p.Name, p.Type.Name)))
+		ImmutableArray<IField> props = allProperties
+				.Select(static p => (IField)(Enum.TryParse(p.Type.Name, out DbDataType type)
+					? new NativeField(p.Name, type)
+					: new CustomField(p.Name, p.Type.Name)))
 				.ToImmutableArray();
-		return new NestableClassModelDeclaration(@class.Name, @class.ContainingNamespace.Name, props, options.HasFlag(ModelOptions.GenerateToString));
+		return new NestablePropertyModel(@class.Name, @class.ContainingNamespace.Name, props, options.HasFlag(ModelOptions.GenerateToString));
 	}
 
 	public string FileName => $"{_namespace}.{_name}.g.cs";

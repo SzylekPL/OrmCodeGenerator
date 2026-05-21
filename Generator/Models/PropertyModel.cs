@@ -1,17 +1,17 @@
-﻿using OrmGenerator.Models.Property;
-using OrmGenerator.Utility;
+﻿using OrmGenerator.Models.Field;
+using Shared;
 using System;
 using System.Collections.Immutable;
 using System.Text;
 
 namespace OrmGenerator.Models;
 
-internal sealed class ClassModelDeclaration(string name, string @namespace, ImmutableArray<StandardProperty> properties, bool generateToString) : ModelDeclaration(name, @namespace, generateToString), IEquatable<ClassModelDeclaration>
+internal sealed class PropertyModel(string name, string @namespace, ImmutableArray<NativeField> properties, bool generateToString) : ModelDeclaration(name, @namespace, generateToString), IEquatable<PropertyModel>
 {
-	private readonly ImmutableArray<StandardProperty> _properties = properties;
+	private readonly ImmutableArray<NativeField> _properties = properties;
 
-	public override bool Equals(ModelDeclaration other) => other is ClassModelDeclaration d && Equals(d);
-	public bool Equals(ClassModelDeclaration other)
+	public override bool Equals(ModelDeclaration other) => other is PropertyModel d && Equals(d);
+	public bool Equals(PropertyModel other)
 	{
 		if (_name != other._name || _namespace != other._namespace || _properties.Length != other._properties.Length)
 			return false;
@@ -42,9 +42,9 @@ internal sealed class ClassModelDeclaration(string name, string @namespace, Immu
 				{
 			""");
 
-			foreach (StandardProperty prop in _properties)
+			foreach (NativeField prop in _properties)
 				builder.AppendLine($@"		{prop.Name} = reader.Get{prop.Type.CsString}(index++),");
-			
+
 
 			builder.AppendLine(@"	};");
 			if (_generateToString)
@@ -53,7 +53,7 @@ internal sealed class ClassModelDeclaration(string name, string @namespace, Immu
 						public override string ToString() =>
 							$"""
 					"""");
-				foreach (StandardProperty prop in _properties)
+				foreach (NativeField prop in _properties)
 					builder.AppendLine($"		{prop.Name}: {{{prop.Name}}}");
 				builder.AppendLine("		\"\"\";");
 			}

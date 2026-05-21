@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using OrmGenerator.Utility;
+using Shared;
 using System.Collections.Immutable;
 using System.Linq;
 using static Shared.ProjectDiagnostics;

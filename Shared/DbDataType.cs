@@ -1,6 +1,6 @@
 ﻿using System.Collections.Frozen;
 
-namespace OrmGenerator.Utility;
+namespace Shared;
 
 public enum DbDataType
 {

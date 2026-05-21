@@ -1,7 +1,7 @@
 ﻿namespace OrmGenerator.Models.Property;
 
-internal interface IProperty
+internal interface IField
 {
 	public string Name { get; }
-	public bool Equals(in IProperty other);
+	public bool Equals(in IField other);
 }

@@ -1,17 +1,18 @@
-﻿using OrmGenerator.Models.Property;
-using OrmGenerator.Utility;
+﻿using OrmGenerator.Models.Field;
+using OrmGenerator.Models.Property;
+using Shared;
 using System;
 using System.Collections.Immutable;
 using System.Text;
 
 namespace OrmGenerator.Models;
 
-internal class NestableClassModelDeclaration(string name, string @namespace, ImmutableArray<IProperty> properties, bool generateToString) : ModelDeclaration(name, @namespace, generateToString), IEquatable<NestableClassModelDeclaration>
+internal class NestablePropertyModel(string name, string @namespace, ImmutableArray<IField> properties, bool generateToString) : ModelDeclaration(name, @namespace, generateToString), IEquatable<NestablePropertyModel>
 {
-	public readonly ImmutableArray<IProperty> _properties = properties;
+	public readonly ImmutableArray<IField> _properties = properties;
 
-	public override bool Equals(ModelDeclaration other) => other is NestableClassModelDeclaration d && Equals(d);
-	public bool Equals(NestableClassModelDeclaration other)
+	public override bool Equals(ModelDeclaration other) => other is NestablePropertyModel d && Equals(d);
+	public bool Equals(NestablePropertyModel other)
 	{
 		if (_name != other._name || _namespace != other._namespace || _properties.Length != other._properties.Length)
 			return false;
@@ -41,13 +42,13 @@ internal class NestableClassModelDeclaration(string name, string @namespace, Imm
 				{
 			""");
 
-			foreach (IProperty prop in _properties)
+			foreach (IField prop in _properties)
 			{
-				if (prop is CustomProperty c)
+				if (prop is CustomField c)
 					builder.AppendLine($"		{c.Name} = {c.Type}.GetSingleModel(reader, ref index),");
 				else
 				{
-					StandardProperty s = (StandardProperty)prop;
+					NativeField s = (NativeField)prop;
 					builder.AppendLine($@"		{s.Name} = reader.Get{s.Type.CsString}(index++),");
 				}
 			}
@@ -59,7 +60,7 @@ internal class NestableClassModelDeclaration(string name, string @namespace, Imm
 						public override string ToString() =>
 							$"""
 					"""");
-				foreach (IProperty prop in _properties)
+				foreach (IField prop in _properties)
 					builder.AppendLine($@"		{prop.Name}: {{{prop.Name}}}");
 				builder.AppendLine("		\"\"\";");
 			}
