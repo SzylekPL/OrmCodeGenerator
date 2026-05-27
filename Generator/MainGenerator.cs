@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using OrmGenerator.Models;
+using System.Diagnostics;
 
 namespace OrmGenerator;
 
@@ -24,7 +25,10 @@ public sealed partial class MainGenerator : IIncrementalGenerator
 			)
 			.Where(static m => m is not null)!;
 		context.RegisterSourceOutput(provider, static (spc, model) =>
-			spc.AddSource(model.FileName, model.SourceCode)
-		);
+		{
+			Debug.WriteLine(model.FileName);
+			Debug.WriteLine(model.SourceCode);
+			spc.AddSource(model.FileName, model.SourceCode);
+		});
 	}
 }

@@ -39,7 +39,7 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 		bool primitiveOnly = allParameters.All(p => DbDataType.Values.Contains(p.Type.Name));
 		if (options.HasFlag(ModelOptions.DisableNesting) || primitiveOnly)
 		{
-			if (options.HasFlag(ModelOptions.DisableNesting) != primitiveOnly)
+			if (options.HasFlag(ModelOptions.DisableNesting) && !primitiveOnly)
 				return null;
 			ImmutableArray<NativeField> prop = allParameters
 				.Select(static p => new NativeField(p.Name, (DbDataType)Enum.Parse(typeof(DbDataType), p.Type.Name)))
