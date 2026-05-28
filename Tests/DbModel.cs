@@ -10,5 +10,5 @@ public partial class DbModel
 	public string Row4 { get; set; }
 }
 
-[OrmModel(ModelOptions.GenerateToString)]
+[OrmModel(ModelOptions.GenerateToString | ModelOptions.DisableNesting)]
 public partial record Point(int X, int Y);

@@ -9,12 +9,15 @@ public sealed partial class MainGenerator
 		using System;
 		namespace OrmGenerator;
 
+		#pragma warning disable 9113 // parameter is being read from semantics, so this is a false positive
+
 		/// <summary>
 		/// Used to mark models for database mapping generation.
 		/// Requires the marked type to be defined as <c>partial</c> to work.
 		/// </summary>
 		[AttributeUsage(AttributeTargets.Class)]
 		internal sealed class OrmModelAttribute(ModelOptions options = ModelOptions.None) : Attribute;
+
 		[Flags]
 		internal enum ModelOptions
 		{
