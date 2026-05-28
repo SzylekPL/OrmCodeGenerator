@@ -63,17 +63,6 @@ public sealed partial class MainGenerator
 			/// <typeparam name="TSelf">Model type returned from mapping</typeparam>
 			internal static abstract TSelf GetSingleModel(DbDataReader reader, ref int index);
 		}
-		public static class ModelExtensions
-		{
-			extension<TModel>(TModel) where TModel: class, IOrmModel<TModel>
-			{
-				public static TModel GetSingleModel(DbDataReader reader)
-				{
-					int index = 0;
-					return TModel.GetSingleModel(reader, ref index);
-				}
-			}
-		}
 		""";
 	private const string _extensionsContent =
 		"""
@@ -102,7 +91,7 @@ public sealed partial class MainGenerator
 				/// <param name="command"> The command to source data from.</param>
 				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
 				/// <returns>A mapped <typeparamref name="TModel"/> instance or <c>null</c> if the query result is empty.</returns>
-				public TModel? GetSingle()
+				public TModel? GetFirstOrNull()
 				{
 					using DbDataReader reader = command.ExecuteReader(CommandBehavior.SingleRow);
 					return reader.Read() 
@@ -116,7 +105,7 @@ public sealed partial class MainGenerator
 				/// <param name="command"> The command to source data from.</param>
 				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
 				/// <returns>A <see cref="Task{TModel}"/> containing a mapped <typeparamref name="TModel"/> instance or <c>null</c> if the query result is empty.</returns>
-				public async Task<TModel?> GetSingleAsync(CancellationToken token = default)
+				public async Task<TModel?> GetFirstOrNullAsync(CancellationToken token = default)
 				{
 					using DbDataReader reader = await command.ExecuteReaderAsync(CommandBehavior.SingleRow, token);
 					return await reader.ReadAsync(token) 
