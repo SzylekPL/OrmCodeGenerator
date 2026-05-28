@@ -24,11 +24,8 @@ public sealed partial class MainGenerator : IIncrementalGenerator
 				transform: static (ctx, _) => ModelDeclaration.Create(ctx)
 			)
 			.Where(static m => m is not null)!;
-		context.RegisterSourceOutput(provider, static (spc, model) =>
-		{
-			Debug.WriteLine(model.FileName);
-			Debug.WriteLine(model.SourceCode);
-			spc.AddSource(model.FileName, model.SourceCode);
-		});
+		context.RegisterSourceOutput(provider, static (spc, model) => 
+			spc.AddSource(model.FileName, model.SourceCode)
+		);
 	}
 }
