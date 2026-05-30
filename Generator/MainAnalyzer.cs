@@ -11,7 +11,6 @@ namespace OrmGenerator;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class MainAnalyzer : DiagnosticAnalyzer
 {
-
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => DefinedDiagnostics;
 
 	public override void Initialize(AnalysisContext context)
@@ -37,7 +36,10 @@ public class MainAnalyzer : DiagnosticAnalyzer
 			{
 				//todo: check if this even works for records
 				IMethodSymbol? ctor = type.InstanceConstructors
-					.FirstOrDefault(static c => c.IsImplicitlyDeclared && c.Parameters.Length != 0);
+					.FirstOrDefault(c => 
+						c.IsImplicitlyDeclared 
+						&& c.Parameters.Length != 0 
+						&& c.Parameters[0].Type.Name != type.Name);
 
 				if (ctor is null)
 				{

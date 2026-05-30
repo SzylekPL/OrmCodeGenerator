@@ -12,10 +12,10 @@ internal static class ContextExtensions
 		.ConstructorArguments[index]
 		.Value;
 
-		public T? GetAttributeNamedArgument(string property) => (T?)context
+		public T? GetAttributeNamedArgument(string name) => (T?)context
 		.Attributes[0]
 		.NamedArguments
-		.FirstOrDefault(p => p.Key == property)
+		.FirstOrDefault(p => p.Key == name)
 		.Value
 		.Value;
 	}

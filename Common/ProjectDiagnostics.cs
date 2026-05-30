@@ -5,8 +5,11 @@ namespace Shared;
 
 public static class ProjectDiagnostics
 {
+	/// <summary>
+	/// ORM001
+	/// </summary>
 	public static readonly DiagnosticDescriptor _notMarkedRule = new(
-		id: "ORM001",
+		id: "ORM0001",
 		title: "Model not marked",
 		messageFormat: "The type {0} of property {1} must be a marked model",
 		category: "Syntax",
@@ -14,16 +17,22 @@ public static class ProjectDiagnostics
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
 	);
+	/// <summary>
+	/// ORM002
+	/// </summary>
 	public static readonly DiagnosticDescriptor _notNestableRule = new(
-		id: "ORM002",
+		id: "ORM0002",
 		title: "Disabled nesting violation",
 		messageFormat: "The model of type {0} has disabled nesting and mustn't contain other models",
 		category: "Syntax",
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
 	);
+	/// <summary>
+	/// ORM003
+	/// </summary>
 	public static readonly DiagnosticDescriptor _ctorNotSuitableRule = new(
-		id: "ORM003",
+		id: "ORM0003",
 		title: "Primary constructor not suitable",
 		messageFormat: "The model of type {0} doesn't have a suitable primary constructor",
 		category: "Syntax",

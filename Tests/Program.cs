@@ -11,4 +11,4 @@ List<DbModel> models = await command.GetListOfAsync<DbModel>();
 foreach (DbModel model in models)
 {
 	Console.WriteLine(model);
-}
+} 
