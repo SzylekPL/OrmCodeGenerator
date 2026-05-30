@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 
 namespace Shared;
 
-public static class ProjectDiagnostics
+internal static class ProjectDiagnostics
 {
 	/// <summary>
 	/// ORM001

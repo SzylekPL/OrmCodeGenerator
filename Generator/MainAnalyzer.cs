@@ -1,9 +1,9 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using OrmGenerator.Utility;
-using Shared;
 using System.Collections.Immutable;
 using System.Linq;
+using static Shared.Constants;
 using static Shared.ProjectDiagnostics;
 
 namespace OrmGenerator;
@@ -29,8 +29,6 @@ public class MainAnalyzer : DiagnosticAnalyzer
 			if (attribute is null) return;
 
 			ModelOptions options = (ModelOptions)attribute.ConstructorArguments[0].Value!; //null will default to ModelOptions.None
-			if (!options.HasFlag(ModelOptions.DisableNesting))
-				return;
 
 			if (type.IsRecord || options.HasFlag(ModelOptions.UsePrimaryConstructor))
 			{
@@ -48,11 +46,11 @@ public class MainAnalyzer : DiagnosticAnalyzer
 				}
 
 				foreach (IParameterSymbol param in ctor.Parameters)
-					if (!DbDataType.Values.Contains(param.Type.Name))
+					if (!DbDataTypes.Contains(param.Type.Name))
 						ctx.ReportDiagnostic(Diagnostic.Create(_notNestableRule, type.Locations[0], type.Name));
 			}
 			foreach (IPropertySymbol property in type.GetMembers().OfType<IPropertySymbol>())
-				if (!DbDataType.Values.Contains(property.Type.Name))
+				if (!DbDataTypes.Contains(property.Type.Name))
 					ctx.ReportDiagnostic(Diagnostic.Create(_notNestableRule, type.Locations[0], type.Name));
 
 		}, SymbolKind.NamedType);
