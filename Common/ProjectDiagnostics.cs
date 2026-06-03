@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 
 namespace Shared;
 
-public static class ProjectDiagnostics
+internal static class ProjectDiagnostics
 {
 	/// <summary>
 	/// ORM001
@@ -20,19 +20,8 @@ public static class ProjectDiagnostics
 	/// <summary>
 	/// ORM002
 	/// </summary>
-	public static readonly DiagnosticDescriptor _notNestableRule = new(
-		id: "ORM0002",
-		title: "Disabled nesting violation",
-		messageFormat: "The model of type {0} has disabled nesting and mustn't contain other models",
-		category: "Syntax",
-		defaultSeverity: DiagnosticSeverity.Error,
-		isEnabledByDefault: true
-	);
-	/// <summary>
-	/// ORM003
-	/// </summary>
 	public static readonly DiagnosticDescriptor _ctorNotSuitableRule = new(
-		id: "ORM0003",
+		id: "ORM0002",
 		title: "Primary constructor not suitable",
 		messageFormat: "The model of type {0} doesn't have a suitable primary constructor",
 		category: "Syntax",
@@ -40,5 +29,5 @@ public static class ProjectDiagnostics
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
 	);
-	public static readonly ImmutableArray<DiagnosticDescriptor> DefinedDiagnostics = [_notMarkedRule, _ctorNotSuitableRule, _notNestableRule];
+	public static readonly ImmutableArray<DiagnosticDescriptor> DefinedDiagnostics = [_notMarkedRule, _ctorNotSuitableRule];
 }
