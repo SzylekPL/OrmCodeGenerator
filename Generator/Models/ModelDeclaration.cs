@@ -1,13 +1,14 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using OrmGenerator.Utility;
+using Shared;
 using System;
 using System.Collections.Immutable;
 using System.Linq;
 
 namespace OrmGenerator.Models;
 
-internal abstract class ModelDeclaration(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields) 
+internal abstract class ModelDeclaration(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields)
 	: IEquatable<ModelDeclaration>
 {
 	private protected readonly string _name = name;
@@ -37,7 +38,10 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 		ImmutableArray<Field> @params = paramList
 			.Parameters
 			.Select(p => (IParameterSymbol)semanticModel.GetDeclaredSymbol(p)!)
-			.Select(static p => new Field(p.Name, p.Type.Name))
+			.Select(static p => new Field(
+				p.Name,
+				Constants.DbDataTypes.Contains(p.Type.Name) ? string.Intern(p.Type.Name) : p.Type.Name)
+			)
 			.ToImmutableArray();
 		return new ConstructorModel(type.Name, type.ContainingNamespace.Name, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, @params);
 	}
@@ -48,7 +52,10 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 			.GetMembers()
 			.OfType<IPropertySymbol>()
 			.Where(static p => p.DeclaredAccessibility is Accessibility.Public or Accessibility.Internal or Accessibility.ProtectedOrInternal && p.SetMethod is not null)
-			.Select(static p => new Field(p.Name, p.Type.Name))
+			.Select(static p => new Field(
+				p.Name,
+				Constants.DbDataTypes.Contains(p.Type.Name) ? string.Intern(p.Type.Name) : p.Type.Name)
+			)
 			.ToImmutableArray();
 		return new PropertyModel(type.Name, type.ContainingNamespace.Name, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, props);
 	}

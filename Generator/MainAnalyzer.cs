@@ -1,9 +1,9 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using OrmGenerator.Utility;
 using System.Collections.Immutable;
 using System.Linq;
-using static Shared.Constants;
 using static Shared.ProjectDiagnostics;
 
 namespace OrmGenerator;
@@ -32,26 +32,16 @@ public class MainAnalyzer : DiagnosticAnalyzer
 
 			if (type.IsRecord || options.HasFlag(ModelOptions.UsePrimaryConstructor))
 			{
-				//todo: check if this even works for records
-				IMethodSymbol? ctor = type.InstanceConstructors
-					.FirstOrDefault(c => 
-						c.IsImplicitlyDeclared 
-						&& c.Parameters.Length != 0 
-						&& c.Parameters[0].Type.Name != type.Name);
+				ParameterListSyntax? paramList = (ParameterListSyntax?)type
+					.DeclaringSyntaxReferences
+					.SelectMany(r => r.GetSyntax(ctx.CancellationToken).ChildNodes())
+					.FirstOrDefault(n => n is ParameterListSyntax);
 
-				if (ctor is null)
-				{
+				if (paramList is not { Parameters.Count: > 0 })
 					ctx.ReportDiagnostic(Diagnostic.Create(_ctorNotSuitableRule, type.Locations[0], type.Name));
-					return;
-				}
 
-				foreach (IParameterSymbol param in ctor.Parameters)
-					if (!DbDataTypes.Contains(param.Type.Name))
-						ctx.ReportDiagnostic(Diagnostic.Create(_notNestableRule, type.Locations[0], type.Name));
+				//todo: diagnostics report when trying to use non-models in mapping
 			}
-			foreach (IPropertySymbol property in type.GetMembers().OfType<IPropertySymbol>())
-				if (!DbDataTypes.Contains(property.Type.Name))
-					ctx.ReportDiagnostic(Diagnostic.Create(_notNestableRule, type.Locations[0], type.Name));
 
 		}, SymbolKind.NamedType);
 	}

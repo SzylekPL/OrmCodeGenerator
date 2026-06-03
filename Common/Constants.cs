@@ -1,5 +1,5 @@
 ﻿using System.Collections.Frozen;
-using System.Collections.Generic;
+using System.Linq;
 
 namespace Shared;
 
@@ -21,7 +21,7 @@ internal static class Constants
 	//	{"string","String"},
 	//	{"TimeSpan","TimeSpan"},
 	//}.ToFrozenDictionary();
-	public static FrozenSet<string> DbDataTypes =>
+	internal static FrozenSet<string> DbDataTypes =>
 	[
 		"Boolean",
 		"Byte",
@@ -37,4 +37,5 @@ internal static class Constants
 		"String",
 		"TimeSpan",
 	];
+	internal static readonly int InternThreshold = DbDataTypes.Max(static s => s.Length);
 }
