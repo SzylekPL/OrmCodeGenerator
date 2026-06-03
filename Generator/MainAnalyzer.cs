@@ -38,11 +38,27 @@ public class MainAnalyzer : DiagnosticAnalyzer
 					.FirstOrDefault(n => n is ParameterListSyntax);
 
 				if (paramList is not { Parameters.Count: > 0 })
+				{
 					ctx.ReportDiagnostic(Diagnostic.Create(_ctorNotSuitableRule, type.Locations[0], type.Name));
+					return;
+				}
 
 				//todo: diagnostics report when trying to use non-models in mapping
 			}
-
 		}, SymbolKind.NamedType);
+
+		context.RegisterSymbolAction(static ctx =>
+		{
+			IPropertySymbol prop = (IPropertySymbol)ctx.Symbol;
+
+			if (!prop.ContainingType.GetAttributes().Any(static a => a.AttributeClass?.Name is "OrmModelAttribute"))
+				return;
+
+			if (prop.Type.GetAttributes().Any(static a => a.AttributeClass?.Name is "OrmModelAttribute"))
+				return;
+
+			ctx.ReportDiagnostic(Diagnostic.Create(_notMarkedRule, prop.Locations[0], prop.Type.Name, prop.Name));
+
+		}, SymbolKind.Property);
 	}
 }
