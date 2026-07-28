@@ -16,7 +16,10 @@ public sealed partial class MainGenerator
 		/// Requires the marked type to be defined as <c>partial</c> to work.
 		/// </summary>
 		[AttributeUsage(AttributeTargets.Class)]
-		internal sealed class OrmModelAttribute(ModelOptions options = ModelOptions.None) : Attribute;
+		internal sealed class OrmModelAttribute(ModelOptions options = ModelOptions.None) : Attribute
+		{
+			public string Table { set { } }
+		}
 
 		[Flags]
 		internal enum ModelOptions

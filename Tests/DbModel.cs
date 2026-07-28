@@ -1,4 +1,5 @@
 ﻿using OrmGenerator;
+
 namespace Tests;
 
 [OrmModel(ModelOptions.GenerateToString)]
