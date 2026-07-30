@@ -2,20 +2,20 @@
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using OrmGenerator.Utility;
 using Shared;
-using System;
 using System.Collections.Immutable;
 using System.Linq;
 
 namespace OrmGenerator.Models;
 
 internal abstract class ModelDeclaration(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields)
-	: IEquatable<ModelDeclaration>
+	: IGeneratorModel<ModelDeclaration>
 {
 	private protected readonly string _name = name;
 	private protected readonly string _namespace = @namespace;
 	private protected readonly bool _generateToString = generateToString;
 	private protected readonly bool _isRecord = isRecord;
 	private protected readonly ImmutableArray<Field> _fields = fields;
+
 
 	public static ModelDeclaration Create(in GeneratorAttributeSyntaxContext context)
 	{
@@ -66,5 +66,5 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 
 	public string FileName => $"{_namespace}.{_name}.g.cs";
 	public abstract bool Equals(ModelDeclaration other);
-	public abstract string SourceCode { get; }
+	public abstract void RegisterModelOutput(SourceProductionContext context);
 }

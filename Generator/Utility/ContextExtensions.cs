@@ -19,4 +19,14 @@ internal static class ContextExtensions
 		.Value
 		.Value;
 	}
+	extension<T>(IncrementalGeneratorInitializationContext context) where T : IGeneratorModel<T>
+	{
+		public void RegisterModelSourceOutput(IncrementalValuesProvider<T> provider)
+		{
+			context.RegisterSourceOutput<T>(provider, static (ctx, model) =>
+			{
+				model.RegisterModelOutput(ctx);
+			});
+		}
+	}
 }

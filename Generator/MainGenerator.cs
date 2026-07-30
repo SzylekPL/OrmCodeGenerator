@@ -1,6 +1,8 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using OrmGenerator.Models;
+using OrmGenerator.Utility;
 
 namespace OrmGenerator;
 
@@ -22,9 +24,8 @@ public sealed partial class MainGenerator : IIncrementalGenerator
 				predicate: static (node, _) => node is ClassDeclarationSyntax or RecordDeclarationSyntax,
 				transform: static (ctx, _) => ModelDeclaration.Create(ctx)
 			)
-			.Where(static m => m is not null)!;
-		context.RegisterSourceOutput(provider, static (spc, model) =>
-			spc.AddSource(model.FileName, model.SourceCode)
-		);
+			.Where(static m => m is not null);
+
+		context.RegisterModelSourceOutput(provider);
 	}
 }
