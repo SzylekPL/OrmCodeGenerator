@@ -16,6 +16,7 @@ public sealed partial class MainGenerator : IIncrementalGenerator
 			ctx.AddSource("OrmModelAttribute.g.cs", _markerContent);
 			ctx.AddSource("IOrmModel.g.cs", _interfaceContent);
 			ctx.AddSource("DbCommandExtensions.g.cs", _extensionsContent);
+			ctx.AddEmbeddedAttributeDefinition();
 		});
 
 		IncrementalValuesProvider<ModelDeclaration> provider = context.SyntaxProvider
@@ -27,5 +28,6 @@ public sealed partial class MainGenerator : IIncrementalGenerator
 			.Where(static m => m is not null);
 
 		context.RegisterModelSourceOutput(provider);
+		
 	}
 }

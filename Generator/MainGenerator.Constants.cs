@@ -15,6 +15,8 @@ public sealed partial class MainGenerator
 		/// Used to mark models for database mapping generation.
 		/// Requires the marked type to be defined as <c>partial</c> to work.
 		/// </summary>
+
+		[Microsoft.CodeAnalysis.Embedded]
 		[AttributeUsage(AttributeTargets.Class)]
 		internal sealed class OrmModelAttribute(ModelOptions options = ModelOptions.None) : Attribute
 		{

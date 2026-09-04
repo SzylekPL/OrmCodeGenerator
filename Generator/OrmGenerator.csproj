@@ -7,10 +7,10 @@
 		<IsRoslynComponent>true</IsRoslynComponent>
 		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 		
-<!--
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<PackageId>OrmGenerator</PackageId>
+		<PackageId>DbSourceMapper</PackageId>
 		<Version>1.0.0</Version>
+<!--
 -->
 	</PropertyGroup>
 
