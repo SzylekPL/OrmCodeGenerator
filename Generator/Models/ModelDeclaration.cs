@@ -22,10 +22,6 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 		INamedTypeSymbol type = (INamedTypeSymbol)context.TargetSymbol;
 		ModelOptions options = context.GetAttributeConstructorArgument<ModelOptions>(0);
 
-		//TODO: something with this idk
-
-		string? table = context.GetAttributeNamedArgument<string>("Table");
-
 		return type.IsRecord || options.HasFlag(ModelOptions.UsePrimaryConstructor)
 			? CreateFromConstructor(context, type, options)
 			: CreateFromProperties(type, options);

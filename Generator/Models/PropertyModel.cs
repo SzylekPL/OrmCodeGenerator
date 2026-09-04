@@ -2,6 +2,7 @@
 using Shared;
 using System;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 
 namespace OrmGenerator.Models;
@@ -12,12 +13,12 @@ internal class PropertyModel(string name, string @namespace, bool generateToStri
 	public override bool Equals(ModelDeclaration other) => other is PropertyModel d && Equals(d);
 	public bool Equals(PropertyModel other)
 	{
-		if (_name != other._name || _namespace != other._namespace || _fields.Length != other._fields.Length)
+		if (_name != other._name || _namespace != other._namespace)
 			return false;
 
-		for (int i = 0; i < _fields.Length; i++)
-			if (!_fields[i].Equals(other._fields[i]))
-				return false;
+		if(!_fields.SequenceEqual(other._fields))
+			return false;
+
 		return true;
 	}
 
