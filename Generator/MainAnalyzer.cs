@@ -20,34 +20,36 @@ public class MainAnalyzer : DiagnosticAnalyzer
 		context.EnableConcurrentExecution();
 		context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
-		context.RegisterSymbolAction(static ctx =>
+		context.RegisterSyntaxNodeAction(static ctx =>
 		{
-			INamedTypeSymbol type = (INamedTypeSymbol)ctx.Symbol;
+			SyntaxNode node = ctx.Node;
+			INamedTypeSymbol type = (INamedTypeSymbol)ctx.SemanticModel.GetDeclaredSymbol(node)!;
 
-			AttributeData? attribute = GetModelAttribute(type);
+			if (GetModelAttribute(type) is not AttributeData attribute)
+				return;
 
-			if (attribute is null) return;
-
-			ModelOptions options = (ModelOptions)attribute.ConstructorArguments[0].Value!; //null will default to ModelOptions.None
-
-			if (type.IsRecord || options.HasFlag(ModelOptions.UsePrimaryConstructor))
+			switch (node.Kind())
 			{
-				ParameterListSyntax? paramList = (ParameterListSyntax?)type
-					.DeclaringSyntaxReferences
-					.SelectMany(r => r.GetSyntax(ctx.CancellationToken).ChildNodes())
-					.FirstOrDefault(n => n is ParameterListSyntax);
-
-				if (paramList is null)
-				{
-					ctx.ReportDiagnostic(Diagnostic.Create(_ctorNotSuitableRule, type.Locations[0], type.Name));
+				case SyntaxKind.RecordStructDeclaration:
+					ctx.ReportDiagnostic(Diagnostic.Create(_structNotAllowedRule, node.GetLocation(), type.Name));
 					return;
-				}
+				case SyntaxKind.ClassDeclaration:
+					if (!((ModelOptions)attribute.ConstructorArguments[0].Value!).HasFlag(ModelOptions.UsePrimaryConstructor))
+						return;
+					goto case SyntaxKind.RecordDeclaration;
+				case SyntaxKind.RecordDeclaration:
+					if (!node.ChildNodes().Any(static n => n.IsKind(SyntaxKind.ParameterList)))
+						ctx.ReportDiagnostic(Diagnostic.Create(_ctorNotSuitableRule, node.GetLocation(), type.Name));
+					return;
 			}
-		}, SymbolKind.NamedType);
+
+		}, SyntaxKind.RecordDeclaration, SyntaxKind.ClassDeclaration, SyntaxKind.RecordStructDeclaration);
 
 		context.RegisterSyntaxNodeAction(static ctx =>
 		{
-			if (ctx.ContainingSymbol is not INamedTypeSymbol type || GetModelAttribute(type) is not AttributeData attribute)
+			if (ctx.SemanticModel.GetDeclaredSymbol(ctx.Node.Parent!) is not INamedTypeSymbol type)
+				return;
+			if (GetModelAttribute(type) is not AttributeData attribute)
 				return;
 
 			if (!((ModelOptions)attribute.ConstructorArguments[0].Value!).HasFlag(ModelOptions.UsePrimaryConstructor) && !type.IsRecord)

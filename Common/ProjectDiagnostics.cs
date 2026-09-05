@@ -6,10 +6,10 @@ namespace Shared;
 internal static class ProjectDiagnostics
 {
 	/// <summary>
-	/// ORM001
+	/// DSM0001
 	/// </summary>
 	public static readonly DiagnosticDescriptor _notMarkedRule = new(
-		id: "ORM0001",
+		id: "DSM0001",
 		title: "Model not marked",
 		messageFormat: "The type {0} of property {1} must be a marked model",
 		category: "Syntax",
@@ -18,10 +18,10 @@ internal static class ProjectDiagnostics
 		isEnabledByDefault: true
 	);
 	/// <summary>
-	/// ORM002
+	/// DSM0002
 	/// </summary>
 	public static readonly DiagnosticDescriptor _ctorNotSuitableRule = new(
-		id: "ORM0002",
+		id: "DSM0002",
 		title: "Primary constructor not suitable",
 		messageFormat: "The model of type {0} doesn't have a suitable primary constructor",
 		category: "Syntax",
@@ -29,5 +29,16 @@ internal static class ProjectDiagnostics
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
 	);
-	public static readonly ImmutableArray<DiagnosticDescriptor> DefinedDiagnostics = [_notMarkedRule, _ctorNotSuitableRule];
+	/// <summary>
+	/// DSM0003
+	/// </summary>
+	public static readonly DiagnosticDescriptor _structNotAllowedRule = new(
+		id: "DSM0003",
+		title: "Struct type not supported",
+		messageFormat: "The model of type {0} is defined as a struct, which is not supported by the generator",
+		category: "Syntax",
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+	public static readonly ImmutableArray<DiagnosticDescriptor> DefinedDiagnostics = [_notMarkedRule, _ctorNotSuitableRule, _structNotAllowedRule];
 }

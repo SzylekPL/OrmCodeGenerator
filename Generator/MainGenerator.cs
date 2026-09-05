@@ -22,7 +22,7 @@ public sealed partial class MainGenerator : IIncrementalGenerator
 		IncrementalValuesProvider<ModelDeclaration> provider = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
 				"OrmGenerator.OrmModelAttribute",
-				predicate: static (node, _) => node is ClassDeclarationSyntax or RecordDeclarationSyntax,
+				predicate: static (node, _) => node is ClassDeclarationSyntax or RecordDeclarationSyntax && node is not StructDeclarationSyntax,
 				transform: static (ctx, _) => ModelDeclaration.Create(ctx)
 			)
 			.Where(static m => m is not null);
