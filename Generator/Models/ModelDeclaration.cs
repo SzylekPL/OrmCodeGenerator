@@ -40,7 +40,7 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 			.Select(p => (IParameterSymbol)semanticModel.GetDeclaredSymbol(p)!)
 			.Select(static p => new Field(
 				p.Name,
-				Constants.DbDataTypes.Contains(p.Type.Name) ? string.Intern(p.Type.Name) : p.Type.Name)
+				Constants.DefaultDbDataTypes.Contains(p.Type.Name) ? string.Intern(p.Type.Name) : p.Type.Name)
 			)
 			.ToImmutableArray();
 		return new ConstructorModel(type.Name, type.ContainingNamespace.Name, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, @params);
@@ -54,7 +54,7 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 			.Where(static p => p.DeclaredAccessibility is Accessibility.Public or Accessibility.Internal or Accessibility.ProtectedOrInternal && p.SetMethod is not null)
 			.Select(static p => new Field(
 				p.Name,
-				Constants.DbDataTypes.Contains(p.Type.Name) ? string.Intern(p.Type.Name) : p.Type.Name)
+				Constants.DefaultDbDataTypes.Contains(p.Type.Name) ? string.Intern(p.Type.Name) : p.Type.Name)
 			)
 			.ToImmutableArray();
 		return new PropertyModel(type.Name, type.ContainingNamespace.Name, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, props);

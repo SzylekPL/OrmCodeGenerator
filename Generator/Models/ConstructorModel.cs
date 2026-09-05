@@ -40,7 +40,7 @@ internal sealed class ConstructorModel(string name, string @namespace, bool gene
 
 		foreach (Field param in _fields)
 		{
-			if (Constants.DbDataTypes.Contains(param.Type))
+			if (Constants.DefaultDbDataTypes.Contains(param.Type))
 			{
 				builder.AppendLine($"		reader.Get{param.Type}(index++),");
 				continue;

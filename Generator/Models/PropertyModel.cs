@@ -42,7 +42,7 @@ internal class PropertyModel(string name, string @namespace, bool generateToStri
 
 		foreach (Field prop in _fields)
 		{
-			if (Constants.DbDataTypes.Contains(prop.Type))
+			if (Constants.DefaultDbDataTypes.Contains(prop.Type))
 			{
 				builder.AppendLine($"		{prop.Name} = reader.Get{prop.Type}(index++),");
 				continue;

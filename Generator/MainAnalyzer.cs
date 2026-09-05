@@ -65,7 +65,7 @@ public class MainAnalyzer : DiagnosticAnalyzer
 			{
 				IParameterSymbol paramSymbol = ctx.SemanticModel.GetDeclaredSymbol(param, ctx.CancellationToken)!;
 
-				if (!Constants.DbDataTypes.Contains(paramSymbol.Type.Name) && !HasModelAttribute(paramSymbol.Type))
+				if (!Constants.DefaultDbDataTypes.Contains(paramSymbol.Type.Name) && !HasModelAttribute(paramSymbol.Type))
 					ctx.ReportDiagnostic(Diagnostic.Create(_notMarkedRule, param.GetLocation(), paramSymbol.Type.Name, paramSymbol.Name));
 			}
 
@@ -78,7 +78,7 @@ public class MainAnalyzer : DiagnosticAnalyzer
 			if (!HasModelAttribute(prop.ContainingType))
 				return;
 
-			if (HasModelAttribute(prop.Type))
+			if (Constants.DefaultDbDataTypes.Contains(prop.Type.Name) || HasModelAttribute(prop.Type))
 				return;
 
 			ctx.ReportDiagnostic(Diagnostic.Create(_notMarkedRule, prop.Locations[0], prop.Type.Name, prop.Name));

@@ -21,7 +21,7 @@ internal static class Constants
 	//	{"string","String"},
 	//	{"TimeSpan","TimeSpan"},
 	//}.ToFrozenDictionary();
-	internal static FrozenSet<string> DbDataTypes =>
+	internal static FrozenSet<string> DefaultDbDataTypes =>
 	[
 		"Boolean",
 		"Byte",
@@ -37,5 +37,5 @@ internal static class Constants
 		"String",
 		"TimeSpan",
 	];
-	internal static readonly int InternThreshold = DbDataTypes.Max(static s => s.Length);
+	internal static readonly int InternThreshold = DefaultDbDataTypes.Max(static s => s.Length);
 }

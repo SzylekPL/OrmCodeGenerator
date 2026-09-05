@@ -6,7 +6,7 @@ namespace Tests;
 public partial class DbModel
 {
 	public int Id { get; set; }
-	public string Row1 { get; set; }
+	public int Row1 { get; set; }
 	public Point Point { get; set; }
 	public string Row4 { get; set; }
 }
