@@ -13,9 +13,9 @@ public sealed partial class MainGenerator : IIncrementalGenerator
 	{
 		context.RegisterPostInitializationOutput(static ctx =>
 		{
-			ctx.AddSource("OrmModelAttribute.g.cs", _markerContent);
-			ctx.AddSource("IOrmModel.g.cs", _interfaceContent);
-			ctx.AddSource("DbCommandExtensions.g.cs", _extensionsContent);
+			ctx.AddSource("OrmModelAttribute.cs", _markerContent);
+			ctx.AddSource("IOrmModel.cs", _interfaceContent);
+			ctx.AddSource("DbCommandExtensions.cs", _extensionsContent);
 			ctx.AddEmbeddedAttributeDefinition();
 		});
 
