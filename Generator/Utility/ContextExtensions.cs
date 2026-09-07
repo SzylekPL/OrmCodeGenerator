@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace DbSourceMapper.Utility;
@@ -27,6 +28,25 @@ internal static class ContextExtensions
 			{
 				model.RegisterModelOutput(ctx);
 			});
+		}
+	}
+	extension(INamespaceOrTypeSymbol symbol)
+	{
+		public IEnumerable<INamespaceSymbol> AllAncestors
+		{
+			get
+			{
+				INamespaceSymbol? current = symbol.ContainingNamespace;
+
+				if(current is null || current.IsGlobalNamespace)
+					yield break;
+
+				while (current is not null && !current.IsGlobalNamespace)
+				{
+					yield return current;
+					current = current.ContainingNamespace;
+				}
+			}
 		}
 	}
 }

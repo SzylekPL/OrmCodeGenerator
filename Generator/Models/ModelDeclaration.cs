@@ -1,6 +1,6 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using DbSourceMapper.Utility;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using DbSourceMapper.Utility;
 using Shared;
 using System.Collections.Immutable;
 using System.Linq;
@@ -21,13 +21,14 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 	{
 		INamedTypeSymbol type = (INamedTypeSymbol)context.TargetSymbol;
 		ModelOptions options = context.GetAttributeConstructorArgument<ModelOptions>(0);
+		string @namespace = string.Join(".", type.AllAncestors.Reverse().Select(s => s.Name));
 
 		return type.IsRecord || options.HasFlag(ModelOptions.UsePrimaryConstructor)
-			? CreateFromConstructor(context, type, options)
-			: CreateFromProperties(type, options);
+			? CreateFromConstructor(context, type, @namespace, options)
+			: CreateFromProperties(type, @namespace, options);
 	}
 
-	private static ModelDeclaration CreateFromConstructor(in GeneratorAttributeSyntaxContext context, INamedTypeSymbol type, ModelOptions options)
+	private static ModelDeclaration CreateFromConstructor(in GeneratorAttributeSyntaxContext context, INamedTypeSymbol type, string @namespace, ModelOptions options)
 	{
 		SemanticModel semanticModel = context.SemanticModel;
 
@@ -43,10 +44,10 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 				Constants.DefaultDbDataTypes.Contains(p.Type.Name) ? string.Intern(p.Type.Name) : p.Type.Name)
 			)
 			.ToImmutableArray();
-		return new ConstructorModel(type.Name, type.ContainingNamespace.Name, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, @params);
+		return new ConstructorModel(type.Name, @namespace, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, @params);
 	}
 
-	private static ModelDeclaration CreateFromProperties(INamedTypeSymbol type, ModelOptions options)
+	private static ModelDeclaration CreateFromProperties(INamedTypeSymbol type, string @namespace, ModelOptions options)
 	{
 		ImmutableArray<Field> props = type
 			.GetMembers()
@@ -57,7 +58,7 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 				Constants.DefaultDbDataTypes.Contains(p.Type.Name) ? string.Intern(p.Type.Name) : p.Type.Name)
 			)
 			.ToImmutableArray();
-		return new PropertyModel(type.Name, type.ContainingNamespace.Name, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, props);
+		return new PropertyModel(type.Name, @namespace, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, props);
 	}
 
 	public string FileName => $"{_namespace}.{_name}.g.cs";
