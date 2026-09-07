@@ -13,7 +13,7 @@ internal static class ProjectDiagnostics
 		title: "Model not marked",
 		messageFormat: "The type {0} of property {1} must be a marked model",
 		category: "Syntax",
-		description: "The property is neither a standard database type, nor a model marked with OrmModelAttribute.",
+		description: "The property is neither a standard database type, nor a model marked with DbSourceModelAttribute.",
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
 	);

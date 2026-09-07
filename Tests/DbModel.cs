@@ -1,8 +1,8 @@
-﻿using OrmGenerator;
+﻿using DbSourceMapper;
 
 namespace Tests;
 
-[OrmModel(ModelOptions.GenerateToString)]
+[DbSourceModel(ModelOptions.GenerateToString)]
 public partial class DbModel
 {
 	public int Id { get; set; }
@@ -11,10 +11,10 @@ public partial class DbModel
 	public string Row4 { get; set; }
 }
 
-[OrmModel(ModelOptions.GenerateToString)]
+[DbSourceModel(ModelOptions.GenerateToString)]
 public partial record Point(int X, int Y);
 
-[OrmModel(ModelOptions.UsePrimaryConstructor)]
+[DbSourceModel(ModelOptions.UsePrimaryConstructor)]
 public partial class Coords(int x, int y)
 {
 	public int X => x;

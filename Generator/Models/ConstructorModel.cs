@@ -5,7 +5,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 
-namespace OrmGenerator.Models;
+namespace DbSourceMapper.Models;
 
 internal sealed class ConstructorModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields)
 	: ModelDeclaration(name, @namespace, generateToString, isRecord, fields), IEquatable<ConstructorModel>
@@ -31,7 +31,7 @@ internal sealed class ConstructorModel(string name, string @namespace, bool gene
 
 			namespace {{_namespace}}
 			{
-				partial {{(_isRecord ? "record" : "class")}} {{_name}} : global::OrmGenerator.IOrmModel<{{_name}}>
+				partial {{(_isRecord ? "record" : "class")}} {{_name}} : global::DbSourceMapper.IOrmModel<{{_name}}>
 				{
 					public static {{_name}} GetSingleModel(global::System.Data.Common.DbDataReader reader, ref int index) => new(
 			""");

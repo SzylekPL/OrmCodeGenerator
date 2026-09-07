@@ -1,14 +1,14 @@
-# OrmCodeGenerator
+# DbSourceMapper
 
 ## Introduction
-OrmCodeGenerator is a simple, zero-reflection micro-ORM based on ADO.NET and source generators.
+DbSourceMapper is a simple, zero-reflection database mapping library based on ADO.NET and incremental generators.
 
 ## How it works
 The library provides an easy, convinient and efficient way of mapping database query results into objects.
 
-Firstly, DB models need to be partial and marked with the `[OrmModel]` attribute:
+Firstly, DB models need to be partial and marked with the `[DbSourceModel]` attribute:
 ```cs
-[OrmModel(ModelOptions.GenerateToString)]
+[DbSourceModel(ModelOptions.GenerateToString)]
 public partial class DbModel
 {
 	public int Id { get; set; }
@@ -17,7 +17,7 @@ public partial class DbModel
 	public string Row4 { get; set; }
 }
 
-[OrmModel(ModelOptions.GenerateToString | ModelOptions.DisableNesting)]
+[OrmModel(ModelOptions.GenerateToString)]
 public partial record Point(int X, int Y);
 ```
 
@@ -57,3 +57,4 @@ public async IAsyncEnumerable<T> GetAsyncEnumerableOf<T>(CancellationToken token
 - Supports both property-based and constructor-based mapping.
 ## Limitations
 - Value reading is based on property order in the model class, not possible to change in current version.
+- Currently, only types readable by `System.Data.Common.DbDataReader` are considered native database types.

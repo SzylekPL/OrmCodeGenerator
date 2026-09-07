@@ -2,13 +2,13 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using OrmGenerator.Utility;
+using DbSourceMapper.Utility;
 using Shared;
 using System.Collections.Immutable;
 using System.Linq;
 using static Shared.ProjectDiagnostics;
 
-namespace OrmGenerator;
+namespace DbSourceMapper;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class MainAnalyzer : DiagnosticAnalyzer
@@ -87,8 +87,8 @@ public class MainAnalyzer : DiagnosticAnalyzer
 	private static bool HasPrimaryConstructorFlag(AttributeData attribute) => ((ModelOptions)attribute.ConstructorArguments[0].Value!).HasFlag(ModelOptions.UsePrimaryConstructor);
 	private static AttributeData? GetModelAttribute(ITypeSymbol type) => type
 		.GetAttributes()
-		.FirstOrDefault(static attr => attr.AttributeClass?.Name == "OrmModelAttribute");
+		.FirstOrDefault(static attr => attr.AttributeClass?.Name == "DbSourceModelAttribute");
 	private static bool HasModelAttribute(ITypeSymbol type) => type
 		.GetAttributes()
-		.Any(static a => a.AttributeClass?.Name == "OrmModelAttribute");
+		.Any(static a => a.AttributeClass?.Name == "DbSourceModelAttribute");
 }

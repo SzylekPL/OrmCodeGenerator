@@ -1,7 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using System.Linq;
 
-namespace OrmGenerator.Utility;
+namespace DbSourceMapper.Utility;
 
 internal static class ContextExtensions
 {

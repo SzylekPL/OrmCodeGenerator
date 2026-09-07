@@ -1,11 +1,11 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using OrmGenerator.Utility;
+using DbSourceMapper.Utility;
 using Shared;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace OrmGenerator.Models;
+namespace DbSourceMapper.Models;
 
 internal abstract class ModelDeclaration(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields)
 	: IGeneratorModel<ModelDeclaration>

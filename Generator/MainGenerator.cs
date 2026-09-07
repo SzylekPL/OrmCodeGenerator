@@ -1,10 +1,9 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
+﻿using DbSourceMapper.Models;
+using DbSourceMapper.Utility;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using OrmGenerator.Models;
-using OrmGenerator.Utility;
 
-namespace OrmGenerator;
+namespace DbSourceMapper;
 
 [Generator]
 public sealed partial class MainGenerator : IIncrementalGenerator
@@ -13,7 +12,7 @@ public sealed partial class MainGenerator : IIncrementalGenerator
 	{
 		context.RegisterPostInitializationOutput(static ctx =>
 		{
-			ctx.AddSource("OrmModelAttribute.cs", _markerContent);
+			ctx.AddSource("DbSourceModelAttribute.cs", _markerContent);
 			ctx.AddSource("IOrmModel.cs", _interfaceContent);
 			ctx.AddSource("DbCommandExtensions.cs", _extensionsContent);
 			ctx.AddEmbeddedAttributeDefinition();
@@ -21,13 +20,12 @@ public sealed partial class MainGenerator : IIncrementalGenerator
 
 		IncrementalValuesProvider<ModelDeclaration> provider = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
-				"OrmGenerator.OrmModelAttribute",
+				"DbSourceMapper.DbSourceModelAttribute",
 				predicate: static (node, _) => node is ClassDeclarationSyntax or RecordDeclarationSyntax && node is not StructDeclarationSyntax,
 				transform: static (ctx, _) => ModelDeclaration.Create(ctx)
-			)
-			.Where(static m => m is not null);
+			);
 
 		context.RegisterModelSourceOutput(provider);
-		
+
 	}
 }

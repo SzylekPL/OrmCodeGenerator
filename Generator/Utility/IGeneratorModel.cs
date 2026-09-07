@@ -1,7 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using System;
 
-namespace OrmGenerator.Utility;
+namespace DbSourceMapper.Utility;
 
 internal interface IGeneratorModel<T> : IEquatable<T>
 {

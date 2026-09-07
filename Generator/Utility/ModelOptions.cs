@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace OrmGenerator.Utility;
+namespace DbSourceMapper.Utility;
 
 [Flags]
 internal enum ModelOptions
