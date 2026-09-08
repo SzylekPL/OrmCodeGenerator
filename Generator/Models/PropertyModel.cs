@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using DbSourceMapper.Utility;
+using Microsoft.CodeAnalysis;
 using Shared;
 using System;
 using System.Collections.Immutable;
@@ -7,20 +8,25 @@ using System.Text;
 
 namespace DbSourceMapper.Models;
 
-internal class PropertyModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields)
-	: ModelDeclaration(name, @namespace, generateToString, isRecord, fields), IEquatable<PropertyModel>
+internal class PropertyModel : ModelDeclaration, IEquatable<PropertyModel>
 {
-	public override bool Equals(ModelDeclaration other) => other is PropertyModel d && Equals(d);
-	public bool Equals(PropertyModel other)
+	private PropertyModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields) 
+		: base(name, @namespace, generateToString, isRecord, fields) { }
+
+	internal static PropertyModel Create(INamedTypeSymbol type, string @namespace, ModelOptions options)
 	{
-		if (_name != other._name || _namespace != other._namespace)
-			return false;
-
-		if(!_fields.SequenceEqual(other._fields))
-			return false;
-
-		return true;
+		ImmutableArray<Field> props = type
+			.GetMembers()
+			.OfType<IPropertySymbol>()
+			.Where(static p => p.DeclaredAccessibility is Accessibility.Public or Accessibility.Internal or Accessibility.ProtectedOrInternal && p.SetMethod is not null)
+			.Select(static p => new Field(
+				p.Name,
+				Constants.DefaultDbDataTypes.Contains(p.Type.Name) ? string.Intern(p.Type.Name) : p.Type.Name)
+			)
+			.ToImmutableArray();
+		return new(type.Name, @namespace, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, props);
 	}
+	public bool Equals(PropertyModel other) => DataEquals(other);
 
 	public override void RegisterModelOutput(SourceProductionContext context)
 	{
@@ -32,7 +38,7 @@ internal class PropertyModel(string name, string @namespace, bool generateToStri
 
 			namespace {{_namespace}}
 			{
-				partial {{(_isRecord ? "record" : "class")}} {{_name}} : global::DbSourceMapper.IOrmModel<{{_name}}>
+				partial {{(_isRecord ? "record" : "class")}} {{_name}} : global::DbSourceMapper.IDbSourceModel<{{_name}}>
 				{
 					public static {{_name}} GetSingleModel(global::System.Data.Common.DbDataReader reader, ref int index) => new()
 					{
@@ -53,15 +59,17 @@ internal class PropertyModel(string name, string @namespace, bool generateToStri
 		if (_generateToString)
 		{
 			builder.AppendLine($$""""
-							public override string ToString() =>
-								$"""
+						public override string ToString() =>
+							$"""
 					"""");
 			foreach (Field prop in _fields)
 				builder.AppendLine($@"			{prop.Name}: {{{prop.Name}}}");
 			builder.AppendLine("			\"\"\";");
 		}
-		builder.AppendLine("	}");
-		builder.AppendLine("}");
+		builder.AppendLine("""
+				}
+			}
+			""");
 
 		context.AddSource(FileName, builder.ToString());
 	}

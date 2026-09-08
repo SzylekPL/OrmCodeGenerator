@@ -22,7 +22,7 @@ public sealed partial class MainGenerator : IIncrementalGenerator
 			.ForAttributeWithMetadataName(
 				"DbSourceMapper.DbSourceModelAttribute",
 				predicate: static (node, _) => node is ClassDeclarationSyntax or RecordDeclarationSyntax && node is not StructDeclarationSyntax,
-				transform: static (ctx, _) => ModelDeclaration.Create(ctx)
+				transform: static (ctx, token) => ModelDeclaration.Create(ctx,token)
 			);
 
 		context.RegisterModelSourceOutput(provider);

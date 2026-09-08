@@ -46,7 +46,7 @@ public sealed partial class MainGenerator
 			/// <summary>
 			/// Represents a model of type with source-generated mapping.
 			/// </summary>
-			public interface IOrmModel<TSelf> where TSelf : class
+			public interface IDbSourceModel<TSelf> where TSelf : class
 			{
 					
 				/// <summary>
@@ -69,7 +69,7 @@ public sealed partial class MainGenerator
 		{
 			public static class DbCommandExtensions
 			{
-				private static TModel GetSingleModel<TModel>(global::System.Data.Common.DbDataReader reader) where TModel: class, global::DbSourceMapper.IOrmModel<TModel>
+				private static TModel GetSingleModel<TModel>(global::System.Data.Common.DbDataReader reader) where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel>
 				{
 					int index = 0;
 					return TModel.GetSingleModel(reader, ref index);
@@ -81,7 +81,7 @@ public sealed partial class MainGenerator
 				/// <param name="command"> The command to source data from.</param>
 				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
 				/// <returns>A mapped <typeparamref name="TModel"/> instance or <c>null</c> if the query result is empty.</returns>
-				public static TModel? GetFirstOrNull<TModel>(this global::System.Data.Common.DbCommand command) where TModel: class, global::DbSourceMapper.IOrmModel<TModel>
+				public static TModel? GetFirstOrNull<TModel>(this global::System.Data.Common.DbCommand command) where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel>
 				{
 					using global::System.Data.Common.DbDataReader reader = command.ExecuteReader(global::System.Data.CommandBehavior.SingleRow);
 					return reader.Read() 
@@ -95,7 +95,7 @@ public sealed partial class MainGenerator
 				/// <param name="command"> The command to source data from.</param>
 				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
 				/// <returns>A <see cref="Task{TModel}"/> containing a mapped <typeparamref name="TModel"/> instance or <c>null</c> if the query result is empty.</returns>
-				public static async global::System.Threading.Tasks.Task<TModel?> GetFirstOrNullAsync<TModel>(this global::System.Data.Common.DbCommand command, global::System.Threading.CancellationToken token = default) where TModel: class, global::DbSourceMapper.IOrmModel<TModel>
+				public static async global::System.Threading.Tasks.Task<TModel?> GetFirstOrNullAsync<TModel>(this global::System.Data.Common.DbCommand command, global::System.Threading.CancellationToken token = default) where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel>
 				{
 					using global::System.Data.Common.DbDataReader reader = await command.ExecuteReaderAsync(global::System.Data.CommandBehavior.SingleRow, token);
 					return await reader.ReadAsync(token) 
@@ -109,7 +109,7 @@ public sealed partial class MainGenerator
 				/// <param name="command"> The command to source data from.</param>
 				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
 				/// <returns>A <see cref="List{}" /> of mapped <typeparamref name="TModel"/>s.</returns>
-				public static global::System.Collections.Generic.List<TModel> GetListOf<TModel>(this global::System.Data.Common.DbCommand command) where TModel: class, global::DbSourceMapper.IOrmModel<TModel>
+				public static global::System.Collections.Generic.List<TModel> GetListOf<TModel>(this global::System.Data.Common.DbCommand command) where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel>
 				{
 					global::System.Collections.Generic.List<TModel> result = [];
 					using global::System.Data.Common.DbDataReader reader = command.ExecuteReader();
@@ -125,7 +125,7 @@ public sealed partial class MainGenerator
 				/// <param name="command"> The command to source data from.</param>
 				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
 				/// <returns>A <see cref="Task{TModel}"/> containing a <see cref="List{}" /> of mapped <typeparamref name="TModel"/>s.</returns>
-				public static async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<TModel>> GetListOfAsync<TModel>(this global::System.Data.Common.DbCommand command, global::System.Threading.CancellationToken token = default) where TModel: class, global::DbSourceMapper.IOrmModel<TModel>
+				public static async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<TModel>> GetListOfAsync<TModel>(this global::System.Data.Common.DbCommand command, global::System.Threading.CancellationToken token = default) where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel>
 				{
 					global::System.Collections.Generic.List<TModel> result = [];
 					using global::System.Data.Common.DbDataReader reader = await command.ExecuteReaderAsync(token);
@@ -141,7 +141,7 @@ public sealed partial class MainGenerator
 				/// <param name="command"> The command to source data from.</param>
 				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
 				/// <returns>A lazily evaluated <see cref="IEnumerable{}"/> of mapped <typeparamref name="TModel"/>s.</returns>
-				public static IEnumerable<TModel> GetEnumerableOf<TModel>(this global::System.Data.Common.DbCommand command) where TModel: class, global::DbSourceMapper.IOrmModel<TModel>
+				public static IEnumerable<TModel> GetEnumerableOf<TModel>(this global::System.Data.Common.DbCommand command) where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel>
 				{
 					using global::System.Data.Common.DbDataReader reader = command.ExecuteReader();
 				
@@ -155,7 +155,7 @@ public sealed partial class MainGenerator
 				/// <param name="command"> The command to source data from.</param>
 				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
 				/// <returns>A lazily evaluated <see cref="IAsyncEnumerable{}"/> of mapped <typeparamref name="TModel"/>s.</returns>
-				public static async global::System.Collections.Generic.IAsyncEnumerable<TModel> GetAsyncEnumerableOf<TModel>(this global::System.Data.Common.DbCommand command, [global::System.Runtime.CompilerServices.EnumeratorCancellation] global::System.Threading.CancellationToken token = default) where TModel: class, global::DbSourceMapper.IOrmModel<TModel>
+				public static async global::System.Collections.Generic.IAsyncEnumerable<TModel> GetAsyncEnumerableOf<TModel>(this global::System.Data.Common.DbCommand command, [global::System.Runtime.CompilerServices.EnumeratorCancellation] global::System.Threading.CancellationToken token = default) where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel>
 				{
 					using global::System.Data.Common.DbDataReader reader = await command.ExecuteReaderAsync(token);
 				

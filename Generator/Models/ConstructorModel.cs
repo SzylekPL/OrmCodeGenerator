@@ -1,4 +1,6 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using DbSourceMapper.Utility;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Shared;
 using System;
 using System.Collections.Immutable;
@@ -7,19 +9,30 @@ using System.Text;
 
 namespace DbSourceMapper.Models;
 
-internal sealed class ConstructorModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields)
-	: ModelDeclaration(name, @namespace, generateToString, isRecord, fields), IEquatable<ConstructorModel>
+internal sealed class ConstructorModel : ModelDeclaration, IEquatable<ConstructorModel>
 {
-	public override bool Equals(ModelDeclaration other) => other is ConstructorModel d && Equals(d);
-	public bool Equals(ConstructorModel other)
-	{
-		if (_name != other._name || _namespace != other._namespace)
-			return false;
+	private ConstructorModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields)
+		: base(name, @namespace, generateToString, isRecord, fields) { }
 
-		if (!_fields.SequenceEqual(other._fields))
-			return false;
-		return true;
+	public static ConstructorModel Create(in GeneratorAttributeSyntaxContext context, INamedTypeSymbol type, string @namespace, ModelOptions options)
+	{
+		SemanticModel semanticModel = context.SemanticModel;
+
+		ParameterListSyntax paramList = (ParameterListSyntax)context.TargetNode
+			.ChildNodes()
+			.FirstOrDefault(static n => n is ParameterListSyntax);
+
+		ImmutableArray<Field> @params = paramList
+			.Parameters
+			.Select(p => (IParameterSymbol)semanticModel.GetDeclaredSymbol(p)!)
+			.Select(static p => new Field(
+				p.Name,
+				Constants.DefaultDbDataTypes.Contains(p.Type.Name) ? string.Intern(p.Type.Name) : p.Type.Name)
+			)
+			.ToImmutableArray();
+		return new ConstructorModel(type.Name, @namespace, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, @params);
 	}
+	public bool Equals(ConstructorModel other) => DataEquals(other);
 
 	public override void RegisterModelOutput(SourceProductionContext context)
 	{
@@ -31,7 +44,7 @@ internal sealed class ConstructorModel(string name, string @namespace, bool gene
 
 			namespace {{_namespace}}
 			{
-				partial {{(_isRecord ? "record" : "class")}} {{_name}} : global::DbSourceMapper.IOrmModel<{{_name}}>
+				partial {{(_isRecord ? "record" : "class")}} {{_name}} : global::DbSourceMapper.IDbSourceModel<{{_name}}>
 				{
 					public static {{_name}} GetSingleModel(global::System.Data.Common.DbDataReader reader, ref int index) => new(
 			""");
@@ -52,15 +65,18 @@ internal sealed class ConstructorModel(string name, string @namespace, bool gene
 		if (_generateToString)
 		{
 			builder.AppendLine($$""""
-							public override string ToString() =>
-								$"""
-					"""");
+						public override string ToString() =>
+							$"""
+				"""");
 			foreach (Field param in _fields)
 				builder.AppendLine($@"			{param.Name}: {{{param.Name}}}");
 			builder.AppendLine("			\"\"\";");
 		}
-		builder.AppendLine("	}");
-		builder.AppendLine("}");
+
+		builder.AppendLine("""
+				}
+			}
+			""");
 
 		context.AddSource(FileName, builder.ToString());
 	}
