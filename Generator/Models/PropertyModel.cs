@@ -1,16 +1,15 @@
 ﻿using DbSourceMapper.Utility;
 using Microsoft.CodeAnalysis;
 using Shared;
-using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 
 namespace DbSourceMapper.Models;
 
-internal class PropertyModel : ModelDeclaration, IEquatable<PropertyModel>
+internal class PropertyModel : ModelDeclaration
 {
-	private PropertyModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields) 
+	private PropertyModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields)
 		: base(name, @namespace, generateToString, isRecord, fields) { }
 
 	internal static PropertyModel Create(INamedTypeSymbol type, string @namespace, ModelOptions options)
@@ -26,7 +25,7 @@ internal class PropertyModel : ModelDeclaration, IEquatable<PropertyModel>
 			.ToImmutableArray();
 		return new(type.Name, @namespace, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, props);
 	}
-	public bool Equals(PropertyModel other) => DataEquals(other);
+	public override bool Equals(ModelDeclaration other) => other is PropertyModel && DataEquals(other);
 
 	public override void RegisterModelOutput(SourceProductionContext context)
 	{

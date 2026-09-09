@@ -15,6 +15,7 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 	private protected readonly bool _isRecord = isRecord;
 	private protected readonly ImmutableArray<Field> _fields = fields;
 
+	public abstract bool Equals(ModelDeclaration other);
 	private protected bool DataEquals(ModelDeclaration other)
 	{
 		if (_name != other._name)
