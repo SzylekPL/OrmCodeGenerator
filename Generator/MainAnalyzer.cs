@@ -1,8 +1,8 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using DbSourceMapper.Utility;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using DbSourceMapper.Utility;
 using Shared;
 using System.Collections.Immutable;
 using System.Linq;
@@ -72,6 +72,10 @@ public class MainAnalyzer : DiagnosticAnalyzer
 		context.RegisterSymbolAction(static ctx =>
 		{
 			IPropertySymbol prop = (IPropertySymbol)ctx.Symbol;
+
+			Accessibility accessibility = prop.DeclaredAccessibility;
+			if (prop.SetMethod is null || (accessibility != Accessibility.Public && accessibility != Accessibility.Internal && accessibility != Accessibility.ProtectedOrInternal))
+				return;
 
 			if (!HasModelAttribute(prop.ContainingType))
 				return;
