@@ -27,11 +27,6 @@ public class MainAnalyzer : DiagnosticAnalyzer
 
 			if (GetModelAttribute(type) is not AttributeData attribute)
 				return;
-			if (node.IsKind(SyntaxKind.RecordStructDeclaration))
-			{
-				ctx.ReportDiagnostic(Diagnostic.Create(_structNotAllowedRule, node.GetLocation(), type.Name));
-				return;
-			}
 
 			if (node.IsKind(SyntaxKind.ClassDeclaration) && !HasPrimaryConstructorFlag(attribute))
 				return;
@@ -39,7 +34,7 @@ public class MainAnalyzer : DiagnosticAnalyzer
 			if (!node.ChildNodes().Any(static n => n.IsKind(SyntaxKind.ParameterList)))
 				ctx.ReportDiagnostic(Diagnostic.Create(_ctorNotSuitableRule, node.GetLocation(), type.Name));
 
-		}, SyntaxKind.RecordDeclaration, SyntaxKind.ClassDeclaration, SyntaxKind.RecordStructDeclaration);
+		}, SyntaxKind.RecordDeclaration, SyntaxKind.ClassDeclaration);
 
 		context.RegisterSyntaxNodeAction(static ctx =>
 		{
@@ -88,7 +83,10 @@ public class MainAnalyzer : DiagnosticAnalyzer
 		}, SymbolKind.Property);
 	}
 
-	private static bool HasPrimaryConstructorFlag(AttributeData attribute) => ((ModelOptions)attribute.ConstructorArguments[0].Value!).HasFlag(ModelOptions.UsePrimaryConstructor);
+	private static bool HasPrimaryConstructorFlag(AttributeData attribute) => ((ModelOptions)attribute
+		.ConstructorArguments[0]
+		.Value!)
+		.HasFlag(ModelOptions.UsePrimaryConstructor);
 	private static AttributeData? GetModelAttribute(ITypeSymbol type) => type
 		.GetAttributes()
 		.FirstOrDefault(static attr => attr.AttributeClass?.Name == "DbSourceModelAttribute");
