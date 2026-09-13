@@ -1,8 +1,9 @@
 ﻿using DbSourceMapper;
+using Microsoft.Data.Sqlite;
 
 namespace Tests;
 
-[DbSourceModel(ModelOptions.GenerateToString)]
+[DbSourceModel<SqliteCommand>(ModelOptions.GenerateToString)]
 public partial class DbModel
 {
 	public int Id { get; set; }

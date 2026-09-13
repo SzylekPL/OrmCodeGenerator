@@ -48,5 +48,22 @@ internal static class ContextExtensions
 				}
 			}
 		}
+		public IEnumerable<INamespaceOrTypeSymbol> AllAncestorsAndSelf
+		{
+			get
+			{
+				yield return symbol;
+				INamespaceSymbol? current = symbol.ContainingNamespace;
+
+				if (current is null || current.IsGlobalNamespace)
+					yield break;
+
+				while (current is not null && !current.IsGlobalNamespace)
+				{
+					yield return current;
+					current = current.ContainingNamespace;
+				}
+			}
+		}
 	}
 }

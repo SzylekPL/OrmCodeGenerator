@@ -9,10 +9,10 @@ namespace DbSourceMapper.Models.Generic;
 
 internal sealed class GenericConstructorModel : GenericModelDeclaration
 {
-	private GenericConstructorModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields, ImmutableHashSet<string> availableTypes, string readerFullName)
-		: base(name, @namespace, generateToString, isRecord, fields, availableTypes, readerFullName) { }
+	private GenericConstructorModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields, GenericParamModel genericParam)
+		: base(name, @namespace, generateToString, isRecord, fields, genericParam) { }
 
-	public static GenericConstructorModel Create(in GeneratorAttributeSyntaxContext context, INamedTypeSymbol type, string @namespace, ModelOptions options, ImmutableHashSet<string> availableTypes, string readerFullName)
+	public static GenericConstructorModel Create(in GeneratorAttributeSyntaxContext context, INamedTypeSymbol type, string @namespace, ModelOptions options, GenericParamModel genericParam)
 	{
 		SemanticModel semanticModel = context.SemanticModel;
 
@@ -25,14 +25,14 @@ internal sealed class GenericConstructorModel : GenericModelDeclaration
 			.Select(p => (IParameterSymbol)semanticModel.GetDeclaredSymbol(p)!)
 			.Select(p => new Field(p.Name, p.Type.Name))
 			.ToImmutableArray();
-		return new GenericConstructorModel(type.Name, @namespace, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, @params, availableTypes, readerFullName);
+		return new GenericConstructorModel(type.Name, @namespace, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, @params, genericParam);
 	}
 	public override bool Equals(GenericModelDeclaration other) => other is GenericConstructorModel && DataEquals(other);
 
 	public override void RegisterModelOutput(SourceProductionContext context)
 	{
 		StringBuilder builder = new();
-
+		(string fullCommandName, string fullReaderName, ImmutableHashSet<string> availableTypes) = _paramData;
 		//todo: actual support for custom dbreaders
 		builder.AppendLine(
 		$$"""
@@ -40,14 +40,14 @@ internal sealed class GenericConstructorModel : GenericModelDeclaration
 
 			namespace {{_namespace}}
 			{
-				partial {{(_isRecord ? "record" : "class")}} {{_name}} : global::DbSourceMapper.IDbSourceModel<{{_name}}>
+				partial {{(_isRecord ? "record" : "class")}} {{_name}} : global::DbSourceMapper.IDbSourceModel<{{_name}}, global::{{fullCommandName}}>
 				{
-					public static {{_name}} GetSingleModel(global::{{_readerFullName}}, ref int index) => new(
+					private static {{_name}} GetSingleModel(global::{{fullReaderName}} reader, ref int index) => new(
 			""");
 
 		foreach (Field param in _fields)
 		{
-			if (_availableTypes.Contains(param.Type))
+			if (availableTypes.Contains(param.Type))
 			{
 				builder.AppendLine($"			reader.Get{param.Type}(index++),");
 				continue;
@@ -56,7 +56,67 @@ internal sealed class GenericConstructorModel : GenericModelDeclaration
 		}
 
 		builder.Remove(builder.Length - 3, 1);
-		builder.AppendLine(@"		);");
+		builder.AppendLine($$"""
+					);
+
+					private static {{_name}} GetSingleModel(global::{{fullReaderName}} reader)
+					{
+						int index = 0;
+						return {{_name}}.GetSingleModel(reader, ref index);
+					}
+
+					public static {{_name}}? GetFirstOrNull(global::{{fullCommandName}} command)
+					{
+						using global::{{fullReaderName}} reader = command.ExecuteReader(global::System.Data.CommandBehavior.SingleRow);
+						return reader.Read() 
+							? GetSingleModel(reader) 
+							: null;
+					}
+			
+					public static async global::System.Threading.Tasks.Task<{{_name}}?> GetFirstOrNullAsync(global::{{fullCommandName}} command, global::System.Threading.CancellationToken token)
+					{
+						using global::{{fullReaderName}} reader = await command.ExecuteReaderAsync(global::System.Data.CommandBehavior.SingleRow, token);
+						return await reader.ReadAsync(token) 
+							? GetSingleModel(reader) 
+							: null;
+					}
+			
+					public static global::System.Collections.Generic.List<{{_name}}> GetList(global::{{fullCommandName}} command)
+					{
+						global::System.Collections.Generic.List<{{_name}}> result = new();
+						using global::{{fullReaderName}} reader = command.ExecuteReader();
+					
+						while(reader.Read())
+							result.Add(GetSingleModel(reader));
+						return result;
+					}
+			
+					public static async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<{{_name}}>> GetListAsync(global::{{fullCommandName}} command, global::System.Threading.CancellationToken token)
+					{
+						global::System.Collections.Generic.List<{{_name}}> result = new();
+						using global::{{fullReaderName}} reader = await command.ExecuteReaderAsync(token);
+					
+						while(await reader.ReadAsync(token))
+							result.Add(GetSingleModel(reader));
+						return result;
+					}
+			
+					public static global::System.Collections.Generic.IEnumerable<{{_name}}> GetEnumerable(global::{{fullCommandName}} command)
+					{
+						using global::{{fullReaderName}} reader = command.ExecuteReader();
+					
+						while(reader.Read())
+							yield return GetSingleModel(reader);
+					}
+			
+					public static async global::System.Collections.Generic.IAsyncEnumerable<{{_name}}> GetAsyncEnumerable(global::{{fullCommandName}} command, [global::System.Runtime.CompilerServices.EnumeratorCancellation] global::System.Threading.CancellationToken token)
+					{
+						using global::{{fullReaderName}} reader = await command.ExecuteReaderAsync(token);
+					
+						while(await reader.ReadAsync(token))
+							yield return GetSingleModel(reader);
+					}
+			""");
 
 		if (_generateToString)
 		{

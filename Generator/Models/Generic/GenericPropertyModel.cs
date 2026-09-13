@@ -9,10 +9,10 @@ namespace DbSourceMapper.Models.Generic;
 
 internal class GenericPropertyModel : GenericModelDeclaration
 {
-	private GenericPropertyModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields, ImmutableHashSet<string> availableTypes, string readerFullName)
-		: base(name, @namespace, generateToString, isRecord, fields, availableTypes, readerFullName) { }
+	private GenericPropertyModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields, GenericParamModel genericParam)
+		: base(name, @namespace, generateToString, isRecord, fields, genericParam) { }
 
-	internal static GenericPropertyModel Create(INamedTypeSymbol type, string @namespace, ModelOptions options, ImmutableHashSet<string> availableTypes, string readerFullName)
+	internal static GenericPropertyModel Create(INamedTypeSymbol type, string @namespace, ModelOptions options, GenericParamModel genericParam)
 	{
 		ImmutableArray<Field> props = type
 			.GetMembers()
@@ -23,13 +23,14 @@ internal class GenericPropertyModel : GenericModelDeclaration
 				Constants.DefaultDbDataTypes.Contains(p.Type.Name) ? string.Intern(p.Type.Name) : p.Type.Name)
 			)
 			.ToImmutableArray();
-		return new(type.Name, @namespace, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, props, availableTypes, readerFullName);
+		return new(type.Name, @namespace, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, props, genericParam);
 	}
 	public override bool Equals(GenericModelDeclaration other) => other is GenericPropertyModel && DataEquals(other);
 
 	public override void RegisterModelOutput(SourceProductionContext context)
 	{
 		StringBuilder builder = new();
+		var (fullCommandName, fullReaderName, availableTypes) = _paramData;
 
 		builder.AppendLine(
 		$$"""
@@ -37,15 +38,15 @@ internal class GenericPropertyModel : GenericModelDeclaration
 
 			namespace {{_namespace}}
 			{
-				partial {{(_isRecord ? "record" : "class")}} {{_name}} : global::DbSourceMapper.IDbSourceModel<{{_name}}>
+				partial {{(_isRecord ? "record" : "class")}} {{_name}} : global::DbSourceMapper.IDbSourceModel<{{_name}}, global::{{fullCommandName}}>
 				{
-					public static {{_name}} GetSingleModel(global::{{_readerFullName}}, ref int index) => new()
+					private static {{_name}} GetSingleModel(global::{{fullReaderName}} reader, ref int index) => new()
 					{
 			""");
 
 		foreach (Field prop in _fields)
 		{
-			if (_availableTypes.Contains(prop.Type))
+			if (availableTypes.Contains(prop.Type))
 			{
 				builder.AppendLine($"			{prop.Name} = reader.Get{prop.Type}(index++),");
 				continue;
@@ -54,7 +55,69 @@ internal class GenericPropertyModel : GenericModelDeclaration
 		}
 
 
-		builder.AppendLine(@"		};");
+		builder.AppendLine($$"""
+					};
+
+					private static {{_name}} GetSingleModel(global::{{fullReaderName}} reader)
+					{
+						int index = 0;
+						return {{_name}}.GetSingleModel(reader, ref index);
+					}
+
+					public static {{_name}}? GetFirstOrNull(global::{{fullCommandName}} command)
+					{
+						using global::{{fullReaderName}} reader = command.ExecuteReader(global::System.Data.CommandBehavior.SingleRow);
+						return reader.Read() 
+							? GetSingleModel(reader) 
+							: null;
+					}
+			
+					public static async global::System.Threading.Tasks.Task<{{_name}}?> GetFirstOrNullAsync(global::{{fullCommandName}} command, global::System.Threading.CancellationToken token)
+					{
+						using global::{{fullReaderName}} reader = await command.ExecuteReaderAsync(global::System.Data.CommandBehavior.SingleRow, token);
+						return await reader.ReadAsync(token) 
+							? GetSingleModel(reader) 
+							: null;
+					}
+			
+					public static global::System.Collections.Generic.List<{{_name}}> GetList(global::{{fullCommandName}} command)
+					{
+						global::System.Collections.Generic.List<{{_name}}> result = new();
+						using global::{{fullReaderName}} reader = command.ExecuteReader();
+					
+						while(reader.Read())
+							result.Add(GetSingleModel(reader));
+						return result;
+					}
+			
+					public static async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<{{_name}}>> GetListAsync(global::{{fullCommandName}} command, global::System.Threading.CancellationToken token)
+					{
+						global::System.Collections.Generic.List<{{_name}}> result = new();
+						using global::{{fullReaderName}} reader = await command.ExecuteReaderAsync(token);
+					
+						while(await reader.ReadAsync(token))
+							result.Add(GetSingleModel(reader));
+						return result;
+					}
+			
+					public static global::System.Collections.Generic.IEnumerable<{{_name}}> GetEnumerable(global::{{fullCommandName}} command)
+					{
+						using global::{{fullReaderName}} reader = command.ExecuteReader();
+					
+						while(reader.Read())
+							yield return GetSingleModel(reader);
+					}
+			
+					public static async global::System.Collections.Generic.IAsyncEnumerable<{{_name}}> GetAsyncEnumerable(global::{{fullCommandName}} command, [global::System.Runtime.CompilerServices.EnumeratorCancellation] global::System.Threading.CancellationToken token)
+					{
+						using global::{{fullReaderName}} reader = await command.ExecuteReaderAsync(token);
+					
+						while(await reader.ReadAsync(token))
+							yield return GetSingleModel(reader);
+					}
+			""");
+			
+
 		if (_generateToString)
 		{
 			builder.AppendLine($$""""

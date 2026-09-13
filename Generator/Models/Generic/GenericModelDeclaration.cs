@@ -13,18 +13,16 @@ internal abstract class GenericModelDeclaration : IGeneratorModel<GenericModelDe
 	private protected readonly bool _generateToString;
 	private protected readonly bool _isRecord;
 	private protected readonly ImmutableArray<Field> _fields;
-	private protected readonly ImmutableHashSet<string> _availableTypes;
-	private protected readonly string _readerFullName;
+	private protected readonly GenericParamModel _paramData;
 
-	private protected GenericModelDeclaration(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields, ImmutableHashSet<string> availableTypes, string readerFullName)
+	private protected GenericModelDeclaration(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields, GenericParamModel paramData)
 	{
 		_name = name;
 		_namespace = @namespace;
 		_generateToString = generateToString;
 		_isRecord = isRecord;
 		_fields = fields;
-		_availableTypes = availableTypes;
-		_readerFullName = readerFullName;
+		_paramData = paramData;
 	}
 
 	public abstract bool Equals(GenericModelDeclaration other);
@@ -40,30 +38,24 @@ internal abstract class GenericModelDeclaration : IGeneratorModel<GenericModelDe
 			return false;
 		if (!_fields.SequenceEqual(other._fields))
 			return false;
-		if(_availableTypes.SetEquals(other._availableTypes))	
+		if (_paramData.Equals(other._paramData))
 			return false;
 		return true;
 	}
 	public static GenericModelDeclaration Create(in GeneratorAttributeSyntaxContext context, CancellationToken token)
 	{
 		INamedTypeSymbol type = (INamedTypeSymbol)context.TargetSymbol;
-		ITypeSymbol readerType = context.Attributes[0].AttributeClass!.TypeArguments[0];
+		ITypeSymbol genericParam = context.Attributes[0].AttributeClass!.TypeArguments[0];
 		ModelOptions options = context.GetAttributeConstructorArgument<ModelOptions>(0);
 
 		string @namespace = string.Join(".", type.AllAncestors.Reverse().Select(s => s.Name));
-		string readerFullName = string.Join(".", readerType.AllAncestors.Reverse().Select(s => s.Name));
-		ImmutableHashSet<string> availableTypes = readerType
-			.GetMembers()
-			.OfType<IMethodSymbol>()
-			.Where(static m => m.Name.StartsWith("Get") && !m.IsGenericMethod && m.Parameters is [{ Name: "ordinal", Type.Name: "Int32" }])
-			.Select(static m => m.Name[4..])
-			.ToImmutableHashSet();
+		GenericParamModel paramData = new(genericParam);
 
 		token.ThrowIfCancellationRequested();
 
 		return type.IsRecord || options.HasFlag(ModelOptions.UsePrimaryConstructor)
-			? GenericConstructorModel.Create(context, type, @namespace, options,availableTypes,readerFullName)
-			: GenericPropertyModel.Create(type, @namespace, options, availableTypes,readerFullName);
+			? GenericConstructorModel.Create(context, type, @namespace, options, paramData)
+			: GenericPropertyModel.Create(type, @namespace, options, paramData);
 	}
 	public string FileName => $"{_namespace}.{_name}.g.cs";
 	public abstract void RegisterModelOutput(SourceProductionContext context);
