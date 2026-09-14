@@ -1,5 +1,6 @@
 ﻿using DbSourceMapper;
 using Microsoft.Data.Sqlite;
+using MySqlConnector;
 
 namespace Tests;
 

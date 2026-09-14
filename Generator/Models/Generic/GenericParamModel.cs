@@ -10,7 +10,7 @@ internal sealed class GenericParamModel : IEquatable<GenericParamModel>
 {
 	public string FullReaderName { get; }
 	public string FullCommandName { get; }
-	public ImmutableHashSet<string> AvailableTypes { get; }
+	public ImmutableDictionary<string, string> AvailableTypes { get; }
 
 	public GenericParamModel(ITypeSymbol genericParam)
 	{
@@ -18,18 +18,20 @@ internal sealed class GenericParamModel : IEquatable<GenericParamModel>
 
 		ITypeSymbol readerType = ((IMethodSymbol)genericParam
 			.GetMembers("ExecuteReader")
-			.First(static m => m is IMethodSymbol { DeclaredAccessibility: Accessibility.Public, IsGenericMethod: false, Parameters: [] }))
+			.First(static m => m is IMethodSymbol { ReturnType.BaseType.Name: "DbDataReader", DeclaredAccessibility: Accessibility.Public, IsGenericMethod: false, Parameters: [] }))
 			.ReturnType;
 		FullReaderName = string.Join(".", readerType.AllAncestorsAndSelf.Reverse().Select(s => s.Name));
 
 		AvailableTypes = readerType
 			.GetMembers()
 			.OfType<IMethodSymbol>()
-			.Where(static m => m.Name.StartsWith("Get") 
-				&& m is { IsGenericMethod: false, Parameters: [{ Name: "ordinal", Type.Name: "Int32" }] } 
+			//todo this should be ImmutableDictionary containing both name and type
+			.Where(static m => m.Name.StartsWith("Get")
+				&& m is { IsGenericMethod: false, Parameters: [{ Name: "ordinal", Type.Name: "Int32" }] }
 				&& m.ReturnType.Name.Contains(m.Name[4..]))
-			.Select(static m => m.ReturnType.Name)
-			.ToImmutableHashSet();
+			.ToImmutableDictionary(
+				static m => m.ReturnType.Name,
+				static m => m.Name);
 	}
 
 	public bool Equals(GenericParamModel other)
@@ -38,12 +40,12 @@ internal sealed class GenericParamModel : IEquatable<GenericParamModel>
 			return false;
 		if (FullCommandName != other.FullCommandName)
 			return false;
-		if (!AvailableTypes.SetEquals(other.AvailableTypes))
+		if (!AvailableTypes.SequenceEqual(other.AvailableTypes))
 			return false;
 		return true;
 	}
 
-	internal void Deconstruct(out string fullCommandName, out string fullReaderName, out ImmutableHashSet<string> availableTypes)
+	internal void Deconstruct(out string fullCommandName, out string fullReaderName, out ImmutableDictionary<string, string> availableTypes)
 	{
 		fullCommandName = FullCommandName;
 		fullReaderName = FullReaderName;

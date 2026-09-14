@@ -32,7 +32,7 @@ internal sealed class GenericConstructorModel : GenericModelDeclaration
 	public override void RegisterModelOutput(SourceProductionContext context)
 	{
 		StringBuilder builder = new();
-		(string fullCommandName, string fullReaderName, ImmutableHashSet<string> availableTypes) = _paramData;
+		(string fullCommandName, string fullReaderName, ImmutableDictionary<string, string> availableTypes) = _paramData;
 		//todo: actual support for custom dbreaders
 		builder.AppendLine(
 		$$"""
@@ -47,9 +47,9 @@ internal sealed class GenericConstructorModel : GenericModelDeclaration
 
 		foreach (Field param in _fields)
 		{
-			if (availableTypes.Contains(param.Type))
+			if (availableTypes.TryGetValue(param.Type, out string? methodName))
 			{
-				builder.AppendLine($"			reader.Get{param.Type}(index++),");
+				builder.AppendLine($"			reader.{methodName}(index++),");
 				continue;
 			}
 			builder.AppendLine($"			{param.Type}.GetSingleModel(reader, ref index),");

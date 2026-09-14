@@ -46,9 +46,9 @@ internal class GenericPropertyModel : GenericModelDeclaration
 
 		foreach (Field prop in _fields)
 		{
-			if (availableTypes.Contains(prop.Type))
+			if (availableTypes.TryGetValue(prop.Type, out string? methodName))
 			{
-				builder.AppendLine($"			{prop.Name} = reader.Get{prop.Type}(index++),");
+				builder.AppendLine($"			{prop.Name} = reader.{methodName}(index++),");
 				continue;
 			}
 			builder.AppendLine($"			{prop.Name} = {prop.Type}.GetSingleModel(reader, ref index),");

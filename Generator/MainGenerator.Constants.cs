@@ -75,11 +75,11 @@ public sealed partial class MainGenerator
 				where TCommand: global::System.Data.Common.DbCommand
 			{
 				public static abstract TSelf? GetFirstOrNull(TCommand command);
-				public static abstract Task<TSelf?> GetFirstOrNullAsync(TCommand command, CancellationToken token = default);
+				public static abstract Task<TSelf?> GetFirstOrNullAsync(TCommand command, CancellationToken token);
 				public static abstract List<TSelf> GetList(TCommand command);
-				public static abstract Task<List<TSelf>> GetListAsync(TCommand command, CancellationToken token = default);
+				public static abstract Task<List<TSelf>> GetListAsync(TCommand command, CancellationToken token);
 				public static abstract IEnumerable<TSelf> GetEnumerable(TCommand command);
-				//public static abstract IAsyncEnumerable<TSelf> GetAsyncEnumerable(TCommand command, CancellationToken token = default);
+				public static abstract IAsyncEnumerable<TSelf> GetAsyncEnumerable(TCommand command, CancellationToken token);
 			}
 		}
 		""";
@@ -208,10 +208,10 @@ public sealed partial class MainGenerator
 				/// <param name="command"> The command to source data from.</param>
 				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
 				/// <returns>A <see cref="Task{TModel}"/> containing a mapped <typeparamref name="TModel"/> instance or <c>null</c> if the query result is empty.</returns>
-				public static async global::System.Threading.Tasks.Task<TModel?> GetFirstOrNullAsync<TModel, TCommand>(this TCommand command, global::System.Threading.CancellationToken token = default)
+				public static global::System.Threading.Tasks.Task<TModel?> GetFirstOrNullAsync<TModel, TCommand>(this TCommand command, global::System.Threading.CancellationToken token = default)
 					where TCommand: global::System.Data.Common.DbCommand
 					where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel, TCommand>
-					=> await TModel.GetFirstOrNullAsync(command, token);
+					=> TModel.GetFirstOrNullAsync(command, token);
 		
 				/// <summary>
 				/// Executes the query defined in the <paramref name="command"/> parameter, maps the results and returns them as a <see cref="List{}"/> of <typeparamref name="TModel"/>.
@@ -230,10 +230,10 @@ public sealed partial class MainGenerator
 				/// <param name="command"> The command to source data from.</param>
 				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
 				/// <returns>A <see cref="Task{TModel}"/> containing a <see cref="List{}" /> of mapped <typeparamref name="TModel"/>s.</returns>
-				public static async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<TModel>> GetListOfAsync<TModel,TCommand>(this TCommand command, global::System.Threading.CancellationToken token = default)
+				public static global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<TModel>> GetListOfAsync<TModel,TCommand>(this TCommand command, global::System.Threading.CancellationToken token = default)
 					where TCommand: global::System.Data.Common.DbCommand
 					where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel, TCommand>
-					=> await TModel.GetListAsync(command, token);
+					=> TModel.GetListAsync(command, token);
 		
 				/// <summary>
 				/// Executes the query defined in the <paramref name="command"/> parameter, maps the results and returns them as a lazily evaluated <see cref="IEnumerable{}"/> of <typeparamref name="TModel"/>.
@@ -252,10 +252,10 @@ public sealed partial class MainGenerator
 				/// <param name="command"> The command to source data from.</param>
 				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
 				/// <returns>A lazily evaluated <see cref="IAsyncEnumerable{}"/> of mapped <typeparamref name="TModel"/>s.</returns>
-				//public static async global::System.Collections.Generic.IAsyncEnumerable<TModel> GetAsyncEnumerableOf<TModel, TCommand>(this TCommand command, global::System.Threading.CancellationToken token = default)
-				//	where TCommand: global::System.Data.Common.DbCommand
-				//	where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel, TCommand>
-				//	=> await GetAsyncEnumerable(command, token);
+				public static global::System.Collections.Generic.IAsyncEnumerable<TModel> GetAsyncEnumerableOf<TModel, TCommand>(this TCommand command, global::System.Threading.CancellationToken token = default)
+					where TCommand: global::System.Data.Common.DbCommand
+					where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel, TCommand>
+					=> TModel.GetAsyncEnumerable(command, token);
 			}
 		}
 		""";
