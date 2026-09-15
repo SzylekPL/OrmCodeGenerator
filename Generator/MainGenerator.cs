@@ -22,20 +22,20 @@ public sealed partial class MainGenerator : IIncrementalGenerator
 			ctx.AddEmbeddedAttributeDefinition();
 		});
 
-		IncrementalValuesProvider<ModelDeclaration> provider = context.SyntaxProvider
+		IncrementalValuesProvider<ModelBase> provider = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
 				"DbSourceMapper.DbSourceModelAttribute",
 				predicate: static (node, _) => node is (ClassDeclarationSyntax or RecordDeclarationSyntax) and not StructDeclarationSyntax,
-				transform: static (ctx, token) => ModelDeclaration.Create(ctx, token)
+				transform: static (ctx, token) => ModelBase.Create(ctx, token)
 			);
 
 		context.RegisterModelSourceOutput(provider);
 
-		IncrementalValuesProvider<GenericModelDeclaration> genericProvider = context.SyntaxProvider
+		IncrementalValuesProvider<GenericModelBase> genericProvider = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
 				"DbSourceMapper.DbSourceModelAttribute`1",
 				predicate: static (node, _) => node is (ClassDeclarationSyntax or RecordDeclarationSyntax) and not StructDeclarationSyntax,
-				transform: static (ctx, token) => GenericModelDeclaration.Create(ctx, token)
+				transform: static (ctx, token) => GenericModelBase.Create(ctx, token)
 			);
 
 		context.RegisterModelSourceOutput(genericProvider);

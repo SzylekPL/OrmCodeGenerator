@@ -1,5 +1,4 @@
-﻿using DbSourceMapper.Utility;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using System;
 using System.Collections.Immutable;
 using System.Linq;
@@ -14,18 +13,17 @@ internal sealed class GenericParamModel : IEquatable<GenericParamModel>
 
 	public GenericParamModel(ITypeSymbol genericParam)
 	{
-		FullCommandName = string.Join(".", genericParam.AllAncestorsAndSelf.Reverse().Select(s => s.Name));
+		FullCommandName = genericParam.ToDisplayString(); //string.Join(".", genericParam.AllAncestorsAndSelf.Reverse().Select(s => s.Name));
 
 		ITypeSymbol readerType = ((IMethodSymbol)genericParam
 			.GetMembers("ExecuteReader")
 			.First(static m => m is IMethodSymbol { ReturnType.BaseType.Name: "DbDataReader", DeclaredAccessibility: Accessibility.Public, IsGenericMethod: false, Parameters: [] }))
 			.ReturnType;
-		FullReaderName = string.Join(".", readerType.AllAncestorsAndSelf.Reverse().Select(s => s.Name));
+		FullReaderName = readerType.ToDisplayString();
 
 		AvailableTypes = readerType
 			.GetMembers()
 			.OfType<IMethodSymbol>()
-			//todo this should be ImmutableDictionary containing both name and type
 			.Where(static m => m.Name.StartsWith("Get")
 				&& m is { IsGenericMethod: false, Parameters: [{ Name: "ordinal", Type.Name: "Int32" }] }
 				&& m.ReturnType.Name.Contains(m.Name[4..]))

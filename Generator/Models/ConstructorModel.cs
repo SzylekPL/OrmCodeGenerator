@@ -9,7 +9,7 @@ using System.Text;
 
 namespace DbSourceMapper.Models;
 
-internal sealed class ConstructorModel : ModelDeclaration
+internal sealed class ConstructorModel : ModelBase
 {
 	private ConstructorModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields)
 		: base(name, @namespace, generateToString, isRecord, fields) { }
@@ -32,7 +32,7 @@ internal sealed class ConstructorModel : ModelDeclaration
 			.ToImmutableArray();
 		return new ConstructorModel(type.Name, @namespace, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, @params);
 	}
-	public override bool Equals(ModelDeclaration other) => other is ConstructorModel && DataEquals(other);
+	public override bool Equals(ModelBase other) => other is ConstructorModel && DataEquals(other);
 
 	public override void RegisterModelOutput(SourceProductionContext context)
 	{

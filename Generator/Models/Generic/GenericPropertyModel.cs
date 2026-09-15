@@ -6,7 +6,7 @@ using System.Text;
 
 namespace DbSourceMapper.Models.Generic;
 
-internal class GenericPropertyModel : GenericModelDeclaration
+internal class GenericPropertyModel : GenericModelBase
 {
 	private GenericPropertyModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields, ImmutableArray<GenericParamModel> genericParam)
 		: base(name, @namespace, generateToString, isRecord, fields, genericParam) { }
@@ -21,7 +21,7 @@ internal class GenericPropertyModel : GenericModelDeclaration
 			.ToImmutableArray();
 		return new(type.Name, @namespace, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, props, genericParam);
 	}
-	public override bool Equals(GenericModelDeclaration other) => other is GenericPropertyModel && DataEquals(other);
+	public override bool Equals(GenericModelBase other) => other is GenericPropertyModel && DataEquals(other);
 
 	public override void RegisterModelOutput(SourceProductionContext context)
 	{

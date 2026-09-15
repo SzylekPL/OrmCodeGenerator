@@ -2,7 +2,7 @@
 using Microsoft.Data.Sqlite;
 using MySqlConnector;
 
-namespace Tests;
+namespace Tests.RandomNamespace.Models;
 
 [DbSourceModel<SqliteCommand>(ModelOptions.GenerateToString)]
 [DbSourceModel<MySqlCommand>]

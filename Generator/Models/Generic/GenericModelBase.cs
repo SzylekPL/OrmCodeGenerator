@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace DbSourceMapper.Models.Generic;
 
-internal abstract class GenericModelDeclaration : IGeneratorModel<GenericModelDeclaration>
+internal abstract class GenericModelBase : IGeneratorModel<GenericModelBase>
 {
 	private protected readonly string _name;
 	private protected readonly string _namespace;
@@ -15,7 +15,7 @@ internal abstract class GenericModelDeclaration : IGeneratorModel<GenericModelDe
 	private protected readonly ImmutableArray<Field> _fields;
 	private protected readonly ImmutableArray<GenericParamModel> _paramData;
 
-	private protected GenericModelDeclaration(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields, ImmutableArray<GenericParamModel> paramData)
+	private protected GenericModelBase(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields, ImmutableArray<GenericParamModel> paramData)
 	{
 		_name = name;
 		_namespace = @namespace;
@@ -25,8 +25,8 @@ internal abstract class GenericModelDeclaration : IGeneratorModel<GenericModelDe
 		_paramData = paramData;
 	}
 
-	public abstract bool Equals(GenericModelDeclaration other);
-	private protected bool DataEquals(GenericModelDeclaration other)
+	public abstract bool Equals(GenericModelBase other);
+	private protected bool DataEquals(GenericModelBase other)
 	{
 		if (_name != other._name)
 			return false;
@@ -42,12 +42,12 @@ internal abstract class GenericModelDeclaration : IGeneratorModel<GenericModelDe
 			return false;
 		return true;
 	}
-	public static GenericModelDeclaration Create(in GeneratorAttributeSyntaxContext context, CancellationToken token)
+	public static GenericModelBase Create(in GeneratorAttributeSyntaxContext context, CancellationToken token)
 	{
 		INamedTypeSymbol type = (INamedTypeSymbol)context.TargetSymbol;
 		ModelOptions options = context.GetAttributeConstructorArgument<ModelOptions>(0);
 
-		string @namespace = string.Join(".", type.AllAncestors.Reverse().Select(s => s.Name));
+		string @namespace = type.ContainingNamespace.ToDisplayString();
 		ImmutableArray<GenericParamModel> paramData = context
 			.Attributes
 			.Select(static a => new GenericParamModel(a.AttributeClass!.TypeArguments[0]))

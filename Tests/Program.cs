@@ -1,7 +1,7 @@
 ﻿using DbSourceMapper;
 //using Microsoft.Data.Sqlite;
 using MySqlConnector;
-using Tests;
+using Tests.RandomNamespace.Models;
 
 //using SqliteConnection connection = new("Data Source=test.db");
 //connection.Open();

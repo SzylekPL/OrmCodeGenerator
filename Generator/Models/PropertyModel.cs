@@ -7,7 +7,7 @@ using System.Text;
 
 namespace DbSourceMapper.Models;
 
-internal class PropertyModel : ModelDeclaration
+internal class PropertyModel : ModelBase
 {
 	private PropertyModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields)
 		: base(name, @namespace, generateToString, isRecord, fields) { }
@@ -25,7 +25,7 @@ internal class PropertyModel : ModelDeclaration
 			.ToImmutableArray();
 		return new(type.Name, @namespace, options.HasFlag(ModelOptions.GenerateToString), type.IsRecord, props);
 	}
-	public override bool Equals(ModelDeclaration other) => other is PropertyModel && DataEquals(other);
+	public override bool Equals(ModelBase other) => other is PropertyModel && DataEquals(other);
 
 	public override void RegisterModelOutput(SourceProductionContext context)
 	{

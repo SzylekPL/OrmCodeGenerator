@@ -6,8 +6,8 @@ using System.Threading;
 
 namespace DbSourceMapper.Models;
 
-internal abstract class ModelDeclaration(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields)
-	: IGeneratorModel<ModelDeclaration>
+internal abstract class ModelBase(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields)
+	: IGeneratorModel<ModelBase>
 {
 	private protected readonly string _name = name;
 	private protected readonly string _namespace = @namespace;
@@ -15,8 +15,8 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 	private protected readonly bool _isRecord = isRecord;
 	private protected readonly ImmutableArray<Field> _fields = fields;
 
-	public abstract bool Equals(ModelDeclaration other);
-	private protected bool DataEquals(ModelDeclaration other)
+	public abstract bool Equals(ModelBase other);
+	private protected bool DataEquals(ModelBase other)
 	{
 		if (_name != other._name)
 			return false;
@@ -30,11 +30,11 @@ internal abstract class ModelDeclaration(string name, string @namespace, bool ge
 			return false;
 		return true;
 	}
-	public static ModelDeclaration Create(in GeneratorAttributeSyntaxContext context, CancellationToken token)
+	public static ModelBase Create(in GeneratorAttributeSyntaxContext context, CancellationToken token)
 	{
 		INamedTypeSymbol type = (INamedTypeSymbol)context.TargetSymbol;
 		ModelOptions options = context.GetAttributeConstructorArgument<ModelOptions>(0);
-		string @namespace = string.Join(".", type.AllAncestors.Reverse().Select(s => s.Name));
+		string @namespace = type.ContainingNamespace.ToDisplayString();
 
 		token.ThrowIfCancellationRequested();
 
