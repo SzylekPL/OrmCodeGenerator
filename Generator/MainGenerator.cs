@@ -12,15 +12,12 @@ public sealed partial class MainGenerator : IIncrementalGenerator
 	{
 		/*
 		TODO:
-		- improve Get...(int ordinal) method collection by replacing immutable hashset with immutable dictionary
-		- actual enumerators for GetEnumerable
-		- AllowMultiple attribute support
 		- analyzer support for custom provider models
 		*/
 		context.RegisterPostInitializationOutput(static ctx =>
 		{
 			ctx.AddSource("DbSourceModelAttribute.cs", _markerContent);
-			ctx.AddSource("IOrmModel.cs", _interfaceContent);
+			ctx.AddSource("IDbSourceModel.cs", _interfaceContent);
 			ctx.AddSource("DbCommandExtensions.cs", _extensionsContent);
 			ctx.AddEmbeddedAttributeDefinition();
 		});

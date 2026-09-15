@@ -5,6 +5,7 @@ using MySqlConnector;
 namespace Tests;
 
 [DbSourceModel<SqliteCommand>(ModelOptions.GenerateToString)]
+[DbSourceModel<MySqlCommand>]
 public partial class DbModel
 {
 	public int Id { get; set; }
@@ -13,7 +14,8 @@ public partial class DbModel
 	public string Row4 { get; set; }
 }
 
-[DbSourceModel(ModelOptions.GenerateToString)]
+[DbSourceModel<SqliteCommand>(ModelOptions.GenerateToString)]
+[DbSourceModel<MySqlCommand>]
 public partial record Point(int X, int Y);
 
 [DbSourceModel(ModelOptions.UsePrimaryConstructor)]

@@ -13,9 +13,9 @@ internal abstract class GenericModelDeclaration : IGeneratorModel<GenericModelDe
 	private protected readonly bool _generateToString;
 	private protected readonly bool _isRecord;
 	private protected readonly ImmutableArray<Field> _fields;
-	private protected readonly GenericParamModel _paramData;
+	private protected readonly ImmutableArray<GenericParamModel> _paramData;
 
-	private protected GenericModelDeclaration(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields, GenericParamModel paramData)
+	private protected GenericModelDeclaration(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields, ImmutableArray<GenericParamModel> paramData)
 	{
 		_name = name;
 		_namespace = @namespace;
@@ -38,18 +38,20 @@ internal abstract class GenericModelDeclaration : IGeneratorModel<GenericModelDe
 			return false;
 		if (!_fields.SequenceEqual(other._fields))
 			return false;
-		if (_paramData.Equals(other._paramData))
+		if (_paramData.SequenceEqual(other._paramData))
 			return false;
 		return true;
 	}
 	public static GenericModelDeclaration Create(in GeneratorAttributeSyntaxContext context, CancellationToken token)
 	{
 		INamedTypeSymbol type = (INamedTypeSymbol)context.TargetSymbol;
-		ITypeSymbol genericParam = context.Attributes[0].AttributeClass!.TypeArguments[0];
 		ModelOptions options = context.GetAttributeConstructorArgument<ModelOptions>(0);
 
 		string @namespace = string.Join(".", type.AllAncestors.Reverse().Select(s => s.Name));
-		GenericParamModel paramData = new(genericParam);
+		ImmutableArray<GenericParamModel> paramData = context
+			.Attributes
+			.Select(static a => new GenericParamModel(a.AttributeClass!.TypeArguments[0]))
+			.ToImmutableArray();
 
 		token.ThrowIfCancellationRequested();
 
