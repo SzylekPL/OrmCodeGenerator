@@ -50,6 +50,10 @@ public async Task<List<T>> GetListOfAsync<T>(CancellationToken token = default);
 public IEnumerable<T> GetEnumerableOf<T>();
 public async IAsyncEnumerable<T> GetAsyncEnumerableOf<T>(CancellationToken token = default);
 ```
+## Non-standard database providers
+Constraining database readable types to ones supported by `DbDataReader` would make the library very limiting.
+For this reason, both `DbSourceMapperAttribute` and consumer methods expose an optional `TCommand` generic parameter, which is used to determine what types are readable by the `DbDataReader` derivate returned by the provided command type.
+This attribute variant can be used many times on the same type to enable support for multiple database providers.
 ## Features
 - Works during compilation, no runtime penalties.
 - NativeAOT-friendly.
@@ -57,4 +61,3 @@ public async IAsyncEnumerable<T> GetAsyncEnumerableOf<T>(CancellationToken token
 - Supports both property-based and constructor-based mapping.
 ## Limitations
 - Value reading is based on property order in the model class, not possible to change in current version.
-- Currently, only types readable by `System.Data.Common.DbDataReader` are considered native database types.
