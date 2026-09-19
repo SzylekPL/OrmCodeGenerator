@@ -1,18 +1,25 @@
 ﻿using DbSourceMapper;
 using Microsoft.Data.Sqlite;
+using MySqlConnector;
+
 //using MySqlConnector;
-using Tests.RandomNamespace.Models;
+using Tests;
 
-using SqliteConnection connection = new("Data Source=test.db");
-connection.Open();
-using SqliteCommand command = new("SELECT * FROM TestTable;", connection);
+using SqliteConnection sqliteConnection = new("Data Source=test.db");
+sqliteConnection.Open();
+using SqliteCommand sqliteCommand = new("SELECT * FROM TestTable;", sqliteConnection);
 
-//using MySqlConnection connection = new("Data Source=test.db");
-//connection.Open();
-//using MySqlCommand command = new("SELECT * FROM TestTable;", connection);
+using MySqlConnection mySqlConnection = new("some connection string");
+mySqlConnection.Open();
+using MySqlCommand mySqlCommand = new("SELECT * FROM TestTable;", mySqlConnection);
 
-List<DbModel> models = await command.GetListOfAsync<DbModel, SqliteCommand>();
+List<DbModel> models = await mySqlCommand.GetListOfAsync<DbModel, MySqlCommand>();
+foreach (DbModel model in models)
+{
+	Console.WriteLine(model);
+}
 
+models = await sqliteCommand.GetListOfAsync<DbModel, SqliteCommand>();
 foreach (DbModel model in models)
 {
 	Console.WriteLine(model);

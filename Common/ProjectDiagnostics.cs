@@ -8,12 +8,11 @@ internal static class ProjectDiagnostics
 	/// <summary>
 	/// DSM0001
 	/// </summary>
-	public static readonly DiagnosticDescriptor _notMarkedRule = new(
+	public static readonly DiagnosticDescriptor _typeNotSupportedRule = new(
 		id: "DSM0001",
-		title: "Model not marked",
-		messageFormat: "The type {0} of property {1} must be a marked model",
+		title: "Type not supported",
+		messageFormat: "The type {0} of property {1} is neither a marked model, nor supported by the reader of {2}",
 		category: "Syntax",
-		description: "The property is neither a standard database type, nor a model marked with DbSourceModelAttribute.",
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
 	);
@@ -40,5 +39,5 @@ internal static class ProjectDiagnostics
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
 	);
-	public static readonly ImmutableArray<DiagnosticDescriptor> DefinedDiagnostics = [_notMarkedRule, _ctorNotSuitableRule, _structNotAllowedRule];
+	public static readonly ImmutableArray<DiagnosticDescriptor> DefinedDiagnostics = [_typeNotSupportedRule, _ctorNotSuitableRule, _structNotAllowedRule];
 }

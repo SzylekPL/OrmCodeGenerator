@@ -54,6 +54,38 @@ public async IAsyncEnumerable<T> GetAsyncEnumerableOf<T>(CancellationToken token
 Constraining database readable types to ones supported by `DbDataReader` would make the library very limiting.
 For this reason, both `DbSourceMapperAttribute` and consumer methods expose an optional `TCommand` generic parameter, which is used to determine what types are readable by the `DbDataReader` derivate returned by the provided command type.
 This attribute variant can be used many times on the same type to enable support for multiple database providers.
+```cs
+[DbSourceModel<SqliteCommand>(ModelOptions.GenerateToString)]
+[DbSourceModel<MySqlCommand>]
+public partial class DbModel
+{
+	public int Id { get; set; }
+	public int Row1 { get; set; }
+	public Point Point { get; set; }
+	public string Row4 { get; set; }
+}
+```
+```cs
+using SqliteConnection sqliteConnection = new("Data Source=test.db");
+sqliteConnection.Open();
+using SqliteCommand sqliteCommand = new("SELECT * FROM TestTable;", sqliteConnection);
+
+using MySqlConnection mySqlConnection = new("some connection string");
+mySqlConnection.Open();
+using MySqlCommand mySqlCommand = new("SELECT * FROM TestTable;", mySqlConnection);
+
+List<DbModel> models = await mySqlCommand.GetListOfAsync<DbModel, MySqlCommand>();
+foreach (DbModel model in models)
+{
+	Console.WriteLine(model);
+}
+
+models = await sqliteCommand.GetListOfAsync<DbModel, SqliteCommand>();
+foreach (DbModel model in models)
+{
+	Console.WriteLine(model);
+}
+```
 ## Features
 - Works during compilation, no runtime penalties.
 - NativeAOT-friendly.
