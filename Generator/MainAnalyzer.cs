@@ -4,7 +4,6 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Shared;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -39,42 +38,118 @@ public class MainAnalyzer : DiagnosticAnalyzer
 
 		}, SyntaxKind.RecordDeclaration, SyntaxKind.ClassDeclaration);
 
-		context.RegisterCompilationStartAction(static ctx =>
-		{
-			//todo: use this
-			ConcurrentDictionary<string, HashSet<string>> cachedTypes = [];
+		//context.RegisterCompilationStartAction(static ctx =>
+		//{
+		//	//todo: use this
+		//	ConcurrentDictionary<string, HashSet<string>> cachedTypes = [];
 
-			ctx.RegisterSymbolAction(c =>
+		//	ctx.RegisterSymbolAction(c =>
+		//	{
+		//		INamedTypeSymbol type = (INamedTypeSymbol)c.Symbol;
+
+		//		ImmutableArray<AttributeData> attributes = GetModelAttributes(type);
+
+		//		if (attributes is [] or [{ AttributeClass.IsGenericType: false }])
+		//			return;
+
+		//		IEnumerable<(string Name, HashSet<string> parameters)> types = attributes
+		//			.Select(static a => a.AttributeClass!.TypeParameters)
+		//			.Where(static t => t is not [])
+		//			.Select(static t =>
+		//			{
+		//				ITypeParameterSymbol arg = t[0];
+		//				HashSet<string> parameters = new(((IMethodSymbol)arg.GetMembers("GetReader")
+		//					.First(static m => m is IMethodSymbol
+		//					{
+		//						ReturnType.BaseType.Name: "DbDataReader",
+		//						Parameters: []
+		//					}))
+		//					.ReturnType
+		//					.GetMembers()
+		//					.Where(static m => m is IMethodSymbol
+		//					{
+		//						IsGenericMethod: false,
+		//						Parameters: [{ Type.Name: "Int32", Name: "ordinal" }]
+		//					} ms && ms.Name.StartsWith("Get"))
+		//					.Select(static m => ((IMethodSymbol)m).ReturnType.Name));
+
+		//				return (arg.Name, parameters);
+		//			});
+
+		//		foreach ((string Name, HashSet<string> parameters) in types)
+		//			cachedTypes.TryAdd(Name, parameters);
+
+		//	}, SymbolKind.NamedType);
+		//});
+
+		context.RegisterSymbolStartAction(static ctx =>
+		{
+			ITypeSymbol type = (ITypeSymbol)ctx.Symbol;
+			if (type.IsValueType)
+				return;
+
+			ImmutableArray<AttributeData> modelAttributes = GetModelAttributes(type);
+
+			if (modelAttributes is [] or [{ AttributeClass.IsGenericType: false }])
+				return;
+
+			Dictionary<string, HashSet<string>> validTypes = [];
+
+			IEnumerable<(string Name, HashSet<string> Parameters)> types = modelAttributes
+				.Select(static a => a.AttributeClass!.TypeParameters)
+				.Where(static t => t is not [])
+				.Select(static t =>
+				{
+					ITypeParameterSymbol arg = t[0];
+					HashSet<string> parameters = new(((IMethodSymbol)arg.GetMembers("GetReader")
+						.First(static m => m is IMethodSymbol
+						{
+							ReturnType.BaseType.Name: "DbDataReader",
+							Parameters: []
+						}))
+						.ReturnType
+						.GetMembers()
+						.Where(static m => m is IMethodSymbol
+						{
+							IsGenericMethod: false,
+							Parameters: [{ Type.Name: "Int32", Name: "ordinal" }]
+						} ms && ms.Name.StartsWith("Get"))
+						.Select(static m => ((IMethodSymbol)m).ReturnType.Name));
+
+					return (arg.Name, parameters);
+				});
+
+			foreach ((string name, HashSet<string> parameters) in types)
+				if (!validTypes.ContainsKey(name))
+					validTypes.Add(name, parameters);
+
+			ctx.RegisterSymbolEndAction(c =>
 			{
 				INamedTypeSymbol type = (INamedTypeSymbol)c.Symbol;
-
-				ImmutableArray<AttributeData> attributes = GetModelAttributes(type);
-
-				if (attributes is [])
-					return;
-
-				IEnumerable<(string Name, HashSet<string> parameters)> types = attributes
-					.Select(static a => a.AttributeClass!.TypeParameters)
-					.Where(static t => t is not [])
-					.Select(static t =>
+				IEnumerable<IPropertySymbol> mappableProperties = type.GetMembers()
+					.OfType<IPropertySymbol>()
+					.Where(static p => p is
 					{
-						ITypeParameterSymbol arg = t[0];
-						HashSet<string> parameters = new(((IMethodSymbol)arg.GetMembers("GetReader")
-							.First(static m => m is IMethodSymbol { ReturnType.BaseType.Name: "DbDataReader", Parameters: [] }))
-							.ReturnType
-							.GetMembers()
-							.Where(static m => m is IMethodSymbol { IsGenericMethod: false, Parameters: [{ Type.Name: "Int32", Name: "ordinal" }] } ms && ms.Name.StartsWith("Get"))
-							.Select(static m => ((IMethodSymbol)m).ReturnType.Name));
-
-						return (arg.Name, parameters);
+						SetMethod.DeclaredAccessibility:
+							Accessibility.Public
+							or Accessibility.Internal
+							or Accessibility.ProtectedOrInternal
 					});
 
-				foreach ((string Name, HashSet<string> parameters) in types)
-					cachedTypes.TryAdd(Name, parameters);
+				foreach (IPropertySymbol property in mappableProperties)
+				{
+					var modelSupportedProviders = GetGenericModelTypeParameterNames(property.Type);
+					foreach (KeyValuePair<string, HashSet<string>> pair in validTypes)
+					{
+						if (modelSupportedProviders.Contains(pair.Key))
+							continue;
+						if (!pair.Value.Contains(property.Type.Name))
+							c.ReportDiagnostic(Diagnostic.Create(_typeNotSupportedRule, property.Locations[0], property.Type.Name, pair.Key));
+					}
+				}
+			});
 
-			}, SymbolKind.NamedType);
-		});
-
+		}, SymbolKind.NamedType);
 		context.RegisterSyntaxNodeAction(static ctx =>
 		{
 			if (ctx.SemanticModel.GetDeclaredSymbol(ctx.Node.Parent!) is not INamedTypeSymbol type)
@@ -130,6 +205,11 @@ public class MainAnalyzer : DiagnosticAnalyzer
 	private static ImmutableArray<AttributeData> GetModelAttributes(ITypeSymbol type) => type
 		.GetAttributes()
 		.Where(static attr => attr.AttributeClass?.Name is "DbSourceModelAttribute" or "DbSourceModelAttribute`1")
+		.ToImmutableArray();
+	private static IEnumerable<string> GetGenericModelTypeParameterNames(ITypeSymbol type) => type
+		.GetAttributes()
+		.Where(static attr => attr.AttributeClass!.Name is "DbSourceModelAttribute`1")
+		.Select(attr => attr.AttributeClass!.TypeArguments[0].Name)
 		.ToImmutableArray();
 	private static bool HasModelAttribute(ITypeSymbol type) => type
 		.GetAttributes()

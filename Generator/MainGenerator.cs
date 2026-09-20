@@ -13,6 +13,7 @@ public sealed partial class MainGenerator : IIncrementalGenerator
 		/*
 		TODO:
 		- analyzer support for custom provider models
+		- look at `required` support
 		*/
 		context.RegisterPostInitializationOutput(static ctx =>
 		{

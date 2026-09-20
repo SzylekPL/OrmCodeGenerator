@@ -31,10 +31,10 @@ internal static class ProjectDiagnostics
 	/// <summary>
 	/// DSM0003
 	/// </summary>
-	public static readonly DiagnosticDescriptor _structNotAllowedRule = new(
-		id: "DSM0003",
-		title: "Struct type not supported",
-		messageFormat: "The model of type {0} is defined as a struct, which is not supported by the generator",
+	public static readonly DiagnosticDescriptor _typeNotSupportedByProviderRule = new(
+		id: "DSM0004",
+		title: "Type not supported by database provider",
+		messageFormat: "The type {0} is neither a marked model, nor supported by the reader of {2}",
 		category: "Syntax",
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
