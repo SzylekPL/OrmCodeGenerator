@@ -34,10 +34,10 @@ internal static class ProjectDiagnostics
 	public static readonly DiagnosticDescriptor _typeNotSupportedByProviderRule = new(
 		id: "DSM0004",
 		title: "Type not supported by database provider",
-		messageFormat: "The type {0} is neither a marked model, nor supported by the reader of {2}",
+		messageFormat: "The type '{0}' is neither a marked model, nor supported by the reader of {2}",
 		category: "Syntax",
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
 	);
-	public static readonly ImmutableArray<DiagnosticDescriptor> DefinedDiagnostics = [_typeNotSupportedRule, _ctorNotSuitableRule, _structNotAllowedRule];
+	public static readonly ImmutableArray<DiagnosticDescriptor> DefinedDiagnostics = [_typeNotSupportedRule, _ctorNotSuitableRule, _typeNotSupportedByProviderRule];
 }
