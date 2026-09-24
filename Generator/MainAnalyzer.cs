@@ -20,7 +20,7 @@ public class MainAnalyzer : DiagnosticAnalyzer
 	public override void Initialize(AnalysisContext context)
 	{
 		context.EnableConcurrentExecution();
-		context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+		context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
 		context.RegisterSyntaxNodeAction(static ctx =>
 		{
@@ -56,10 +56,10 @@ public class MainAnalyzer : DiagnosticAnalyzer
 					return;
 
 
-				ImmutableArray<ITypeParameterSymbol> supportedProviders = attributes
-					.Select(static a => a.AttributeClass!.TypeParameters)
+				ImmutableArray<INamedTypeSymbol> supportedProviders = attributes
+					.Select(static a => a.AttributeClass!.TypeArguments)
 					.Where(static t => t is not [])
-					.Select(static t => t[0])
+					.Select(static t => (INamedTypeSymbol)t[0])
 					.ToImmutableArray();
 
 				lock (@lock)
@@ -67,11 +67,11 @@ public class MainAnalyzer : DiagnosticAnalyzer
 					typesToInspect.Add((type, supportedProviders.Select(static p => p.Name).ToImmutableArray()));
 				}
 
-				foreach (ITypeParameterSymbol provider in supportedProviders)
+				foreach (INamedTypeSymbol provider in supportedProviders)
 				{
 					if (!cachedTypes.ContainsKey(provider.Name))
 					{
-						HashSet<string> parameters = new(((IMethodSymbol)provider.GetMembers("GetReader")
+						HashSet<string> parameters = new(((IMethodSymbol)provider.GetMembers("ExecuteReader")
 							.First(static m => m is IMethodSymbol
 							{
 								IsGenericMethod: false,
@@ -114,13 +114,18 @@ public class MainAnalyzer : DiagnosticAnalyzer
 			}, SymbolKind.NamedType);
 			compilationContext.RegisterCompilationEndAction(endContext =>
 			{
+
 				foreach ((INamedTypeSymbol type, ImmutableArray<string> supportedProviders) in typesToInspect)
 					foreach (string provider in supportedProviders)
 					{
 						HashSet<string> supportedTypes = cachedTypes[provider];
 						foreach (IPropertySymbol prop in type.GetMembers().Where(static p => IsMappableProperty(p)))
-							if (!supportedTypes.Contains(prop.Name))
-								endContext.ReportDiagnostic(Diagnostic.Create(_typeNotSupportedByProviderRule, prop.Locations[0], prop.Type.Name, provider));
+							if (!supportedTypes.Contains(prop.Type.Name))
+								//todo: find out why the Location is invalid and preventing the diagnostic report
+								endContext.ReportDiagnostic(Diagnostic.Create(_typeNotSupportedByProviderRule,
+									prop.Locations.FirstOrDefault(static l => l.IsInSource) ?? Location.None,
+									prop.Type.Name,
+									provider));
 					}
 			});
 		});
@@ -224,23 +229,23 @@ public class MainAnalyzer : DiagnosticAnalyzer
 
 		//}, SyntaxKind.ParameterList);
 
-		context.RegisterSymbolAction(static ctx =>
-		{
-			IPropertySymbol prop = (IPropertySymbol)ctx.Symbol;
+		//context.RegisterSymbolAction(static ctx =>
+		//{
+		//	IPropertySymbol prop = (IPropertySymbol)ctx.Symbol;
 
-			Accessibility accessibility = prop.DeclaredAccessibility;
-			if (prop.SetMethod is null || accessibility is not (Accessibility.Public or Accessibility.Internal or Accessibility.ProtectedOrInternal))
-				return;
+		//	Accessibility accessibility = prop.DeclaredAccessibility;
+		//	if (prop.SetMethod is null || accessibility is not (Accessibility.Public or Accessibility.Internal or Accessibility.ProtectedOrInternal))
+		//		return;
 
-			if (!HasModelAttribute(prop.ContainingType))
-				return;
+		//	if (!HasModelAttribute(prop.ContainingType))
+		//		return;
 
-			if (Constants.DefaultDbDataTypes.Contains(prop.Type.Name) || HasModelAttribute(prop.Type))
-				return;
+		//	if (Constants.DefaultDbDataTypes.Contains(prop.Type.Name) || HasModelAttribute(prop.Type))
+		//		return;
 
-			ctx.ReportDiagnostic(Diagnostic.Create(_typeNotSupportedRule, prop.Locations[0], prop.Type.Name, prop.Name));
+		//	ctx.ReportDiagnostic(Diagnostic.Create(_typeNotSupportedRule, prop.Locations[0], prop.Type.Name, prop.Name));
 
-		}, SymbolKind.Property);
+		//}, SymbolKind.Property);
 	}
 
 	private static bool HasPrimaryConstructorFlag(AttributeData attribute) => ((ModelOptions)attribute
