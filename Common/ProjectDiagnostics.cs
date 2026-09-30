@@ -29,7 +29,7 @@ internal static class ProjectDiagnostics
 		isEnabledByDefault: true
 	);
 	/// <summary>
-	/// DSM0003
+	/// DSM0004
 	/// </summary>
 	public static readonly DiagnosticDescriptor _typeNotSupportedByProviderRule = new(
 		id: "DSM0004",

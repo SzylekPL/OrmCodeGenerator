@@ -7,6 +7,7 @@ using Shared;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using static Shared.ProjectDiagnostics;
 
@@ -20,7 +21,7 @@ public class MainAnalyzer : DiagnosticAnalyzer
 	public override void Initialize(AnalysisContext context)
 	{
 		context.EnableConcurrentExecution();
-		context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.ReportDiagnostics);
+		context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
 		context.RegisterSyntaxNodeAction(static ctx =>
 		{
@@ -41,7 +42,6 @@ public class MainAnalyzer : DiagnosticAnalyzer
 
 		context.RegisterCompilationStartAction(static compilationContext =>
 		{
-			//todo: use this
 			ConcurrentDictionary<string, HashSet<string>> cachedTypes = [];
 			List<(INamedTypeSymbol Type, ImmutableArray<string> SupportedProviders)> typesToInspect = [];
 			object @lock = new();
@@ -114,18 +114,21 @@ public class MainAnalyzer : DiagnosticAnalyzer
 			}, SymbolKind.NamedType);
 			compilationContext.RegisterCompilationEndAction(endContext =>
 			{
-
 				foreach ((INamedTypeSymbol type, ImmutableArray<string> supportedProviders) in typesToInspect)
 					foreach (string provider in supportedProviders)
 					{
 						HashSet<string> supportedTypes = cachedTypes[provider];
 						foreach (IPropertySymbol prop in type.GetMembers().Where(static p => IsMappableProperty(p)))
 							if (!supportedTypes.Contains(prop.Type.Name))
+							{
+								Debug.WriteLine(SymbolEqualityComparer.Default.Equals(compilationContext.Compilation.SourceModule, endContext.Compilation.SourceModule));
+								//Debug.WriteLine(endContext.Compilation.SyntaxTrees.Contains(prop.Locations[0].SourceTree));
 								//todo: find out why the Location is invalid and preventing the diagnostic report
 								endContext.ReportDiagnostic(Diagnostic.Create(_typeNotSupportedByProviderRule,
 									prop.Locations.FirstOrDefault(static l => l.IsInSource) ?? Location.None,
 									prop.Type.Name,
 									provider));
+							}
 					}
 			});
 		});

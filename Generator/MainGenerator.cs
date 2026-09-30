@@ -14,6 +14,7 @@ public sealed partial class MainGenerator : IIncrementalGenerator
 		TODO:
 		- analyzer support for custom provider models
 		- look at `required` support
+		- add notnull generic constraints
 		*/
 		context.RegisterPostInitializationOutput(static ctx =>
 		{
