@@ -8,10 +8,10 @@ namespace DbSourceMapper.Models.Generic;
 
 internal class GenericPropertyModel : GenericModelBase
 {
-	private GenericPropertyModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields, ImmutableArray<GenericParamModel> genericParam)
+	private GenericPropertyModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields, ImmutableArray<DbProviderData> genericParam)
 		: base(name, @namespace, generateToString, isRecord, fields, genericParam) { }
 
-	internal static GenericPropertyModel Create(INamedTypeSymbol type, string @namespace, ModelOptions options, ImmutableArray<GenericParamModel> genericParam)
+	internal static GenericPropertyModel Create(INamedTypeSymbol type, string @namespace, ModelOptions options, ImmutableArray<DbProviderData> genericParam)
 	{
 		ImmutableArray<Field> props = type
 			.GetMembers()

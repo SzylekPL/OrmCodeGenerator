@@ -56,21 +56,6 @@ public sealed partial class MainGenerator
 		namespace DbSourceMapper
 		{
 			/// <summary>
-			/// Represents a model of type with source-generated mapping.
-			/// </summary>
-			public interface IDbSourceModel<TSelf> where TSelf : class 
-			{
-					
-				/// <summary>
-				/// Initializes a new instance of the <see cref="TSelf"/> class.
-				/// Provides a mechanism to handle nested models.
-				/// This method is used internally by the generator and it's not advised to use it elsewhere.
-				/// </summary>
-				/// <typeparam name="TSelf">Model type returned from mapping</typeparam>
-				public static abstract TSelf GetSingleModel(global::System.Data.Common.DbDataReader reader, ref int index);
-			}
-
-			/// <summary>
 			/// Represents a model of type with source-generated mapping using a specific database provider.
 			/// </summary>
 			public interface IDbSourceModel<TSelf, TCommand> 
@@ -96,103 +81,6 @@ public sealed partial class MainGenerator
 		{
 			public static class DbCommandExtensions
 			{
-				private static TModel GetSingleModel<TModel>(global::System.Data.Common.DbDataReader reader)
-					where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel>
-				{
-					int index = 0;
-					return TModel.GetSingleModel(reader, ref index);
-				}
-		
-				/// <summary>
-				/// Executes the query defined in the <paramref name="command"/> parameter and maps the result to a single instance of <typeparamref name="TModel"/>.
-				/// </summary>
-				/// <param name="command"> The command to source data from.</param>
-				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
-				/// <returns>A mapped <typeparamref name="TModel"/> instance or <c>null</c> if the query result is empty.</returns>
-				public static TModel? GetFirstOrNull<TModel>(this global::System.Data.Common.DbCommand command) where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel>
-				{
-					using global::System.Data.Common.DbDataReader reader = command.ExecuteReader(global::System.Data.CommandBehavior.SingleRow);
-					return reader.Read() 
-						? GetSingleModel<TModel>(reader) 
-						: null;
-				}
-
-				/// <summary>
-				/// Asynchronously executes the query defined in the <paramref name="command"/> parameter and maps the result to a single instance of <typeparamref name="TModel"/>.
-				/// </summary>
-				/// <param name="command"> The command to source data from.</param>
-				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
-				/// <returns>A <see cref="Task{TModel}"/> containing a mapped <typeparamref name="TModel"/> instance or <c>null</c> if the query result is empty.</returns>
-				public static async global::System.Threading.Tasks.Task<TModel?> GetFirstOrNullAsync<TModel>(this global::System.Data.Common.DbCommand command, global::System.Threading.CancellationToken token = default) where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel>
-				{
-					using global::System.Data.Common.DbDataReader reader = await command.ExecuteReaderAsync(global::System.Data.CommandBehavior.SingleRow, token);
-					return await reader.ReadAsync(token) 
-						? GetSingleModel<TModel>(reader) 
-						: null;
-				}
-
-				/// <summary>
-				/// Executes the query defined in the <paramref name="command"/> parameter, maps the results and returns them as a <see cref="List{}"/> of <typeparamref name="TModel"/>.
-				/// </summary>
-				/// <param name="command"> The command to source data from.</param>
-				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
-				/// <returns>A <see cref="List{}" /> of mapped <typeparamref name="TModel"/>s.</returns>
-				public static global::System.Collections.Generic.List<TModel> GetListOf<TModel>(this global::System.Data.Common.DbCommand command) where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel>
-				{
-					global::System.Collections.Generic.List<TModel> result = [];
-					using global::System.Data.Common.DbDataReader reader = command.ExecuteReader();
-				
-					while(reader.Read())
-						result.Add(GetSingleModel<TModel>(reader));
-					return result;
-				}
-
-				/// <summary>
-				/// Asynchronously executes the query defined in the <paramref name="command"/> parameter, maps the results and returns them as a <see cref="Task{}"/> of <see cref="List{}"/> of <typeparamref name="TModel"/>.
-				/// </summary>
-				/// <param name="command"> The command to source data from.</param>
-				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
-				/// <returns>A <see cref="Task{TModel}"/> containing a <see cref="List{}" /> of mapped <typeparamref name="TModel"/>s.</returns>
-				public static async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<TModel>> GetListOfAsync<TModel>(this global::System.Data.Common.DbCommand command, global::System.Threading.CancellationToken token = default) where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel>
-				{
-					global::System.Collections.Generic.List<TModel> result = [];
-					using global::System.Data.Common.DbDataReader reader = await command.ExecuteReaderAsync(token);
-				
-					while(await reader.ReadAsync(token))
-						result.Add(GetSingleModel<TModel>(reader));
-					return result;
-				}
-
-				/// <summary>
-				/// Executes the query defined in the <paramref name="command"/> parameter, maps the results and returns them as a lazily evaluated <see cref="IEnumerable{}"/> of <typeparamref name="TModel"/>.
-				/// </summary>
-				/// <param name="command"> The command to source data from.</param>
-				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
-				/// <returns>A lazily evaluated <see cref="IEnumerable{}"/> of mapped <typeparamref name="TModel"/>s.</returns>
-				public static global::System.Collections.Generic.IEnumerable<TModel> GetEnumerableOf<TModel>(this global::System.Data.Common.DbCommand command) where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel>
-				{
-					using global::System.Data.Common.DbDataReader reader = command.ExecuteReader();
-				
-					while(reader.Read())
-						yield return GetSingleModel<TModel>(reader);
-				}
-
-				/// <summary>
-				/// Asynchronously executes the query defined in the <paramref name="command"/> parameter, maps the results and returns them as a lazily evaluated <see cref="IAsyncEnumerable{}"/> of <typeparamref name="TModel"/>.
-				/// </summary>
-				/// <param name="command"> The command to source data from.</param>
-				/// <typeparam name="TModel"> Type of the model used as a result of mapping.</typeparam>
-				/// <returns>A lazily evaluated <see cref="IAsyncEnumerable{}"/> of mapped <typeparamref name="TModel"/>s.</returns>
-				public static async global::System.Collections.Generic.IAsyncEnumerable<TModel> GetAsyncEnumerableOf<TModel>(this global::System.Data.Common.DbCommand command, [global::System.Runtime.CompilerServices.EnumeratorCancellation] global::System.Threading.CancellationToken token = default) where TModel: class, global::DbSourceMapper.IDbSourceModel<TModel>
-				{
-					using global::System.Data.Common.DbDataReader reader = await command.ExecuteReaderAsync(token);
-				
-					while(await reader.ReadAsync(token))
-						yield return GetSingleModel<TModel>(reader);
-				}
-
-
-
 				/// <summary>
 				/// Executes the query defined in the <paramref name="command"/> parameter and maps the result to a single instance of <typeparamref name="TModel"/>.
 				/// </summary>

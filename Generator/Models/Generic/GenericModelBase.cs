@@ -13,9 +13,9 @@ internal abstract class GenericModelBase : IGeneratorModel<GenericModelBase>
 	private protected readonly bool _generateToString;
 	private protected readonly bool _isRecord;
 	private protected readonly ImmutableArray<Field> _fields;
-	private protected readonly ImmutableArray<GenericParamModel> _paramData;
+	private protected readonly ImmutableArray<DbProviderData> _paramData;
 
-	private protected GenericModelBase(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields, ImmutableArray<GenericParamModel> paramData)
+	private protected GenericModelBase(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields, ImmutableArray<DbProviderData> paramData)
 	{
 		_name = name;
 		_namespace = @namespace;
@@ -48,10 +48,7 @@ internal abstract class GenericModelBase : IGeneratorModel<GenericModelBase>
 		ModelOptions options = context.GetAttributeConstructorArgument<ModelOptions>(0);
 
 		string @namespace = type.ContainingNamespace.ToDisplayString();
-		ImmutableArray<GenericParamModel> paramData = context
-			.Attributes
-			.Select(static a => new GenericParamModel(a.AttributeClass!.TypeArguments[0]))
-			.ToImmutableArray();
+		ImmutableArray<DbProviderData> paramData = DbProviderData.CreateFromAllAttributes(context);
 
 		token.ThrowIfCancellationRequested();
 

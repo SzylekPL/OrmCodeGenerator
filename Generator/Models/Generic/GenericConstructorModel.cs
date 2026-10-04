@@ -9,10 +9,10 @@ namespace DbSourceMapper.Models.Generic;
 
 internal sealed class GenericConstructorModel : GenericModelBase
 {
-	private GenericConstructorModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields, ImmutableArray<GenericParamModel> genericParam)
+	private GenericConstructorModel(string name, string @namespace, bool generateToString, bool isRecord, ImmutableArray<Field> fields, ImmutableArray<DbProviderData> genericParam)
 		: base(name, @namespace, generateToString, isRecord, fields, genericParam) { }
 
-	public static GenericConstructorModel Create(in GeneratorAttributeSyntaxContext context, INamedTypeSymbol type, string @namespace, ModelOptions options, ImmutableArray<GenericParamModel> genericParam)
+	public static GenericConstructorModel Create(in GeneratorAttributeSyntaxContext context, INamedTypeSymbol type, string @namespace, ModelOptions options, ImmutableArray<DbProviderData> genericParam)
 	{
 		SemanticModel semanticModel = context.SemanticModel;
 
