@@ -1,5 +1,4 @@
 ﻿using DbSourceMapper.Models;
-using DbSourceMapper.Models.Generic;
 using DbSourceMapper.Utility;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -33,11 +32,11 @@ public sealed partial class MainGenerator : IIncrementalGenerator
 
 		context.RegisterModelSourceOutput(provider);
 
-		IncrementalValuesProvider<GenericModelBase> genericProvider = context.SyntaxProvider
+		IncrementalValuesProvider<ModelBase> genericProvider = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
 				"DbSourceMapper.DbSourceModelAttribute`1",
 				predicate: static (node, _) => node is (ClassDeclarationSyntax or RecordDeclarationSyntax) and not StructDeclarationSyntax,
-				transform: static (ctx, token) => GenericModelBase.Create(ctx, token)
+				transform: static (ctx, token) => ModelBase.Create(ctx, token)
 			);
 
 		context.RegisterModelSourceOutput(genericProvider);

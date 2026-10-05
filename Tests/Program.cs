@@ -1,6 +1,8 @@
 ﻿using DbSourceMapper;
 using Microsoft.Data.Sqlite;
 using MySqlConnector;
+using System.Data.Common;
+
 
 //using MySqlConnector;
 using Tests;
