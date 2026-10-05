@@ -4,7 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-namespace DbSourceMapper.Models.Generic;
+namespace DbSourceMapper.Models;
 
 internal sealed class DbProviderData : IEquatable<DbProviderData>
 {
@@ -30,7 +30,7 @@ internal sealed class DbProviderData : IEquatable<DbProviderData>
 				? FromGeneric(attributeClass.TypeArguments[0])
 				: FromBase(context.SemanticModel.Compilation);
 		}
-		return ImmutableCollectionsMarshal.AsImmutableArray(result);
+		return ImmutableCollectionsMarshal.AsImmutableArray(result); //created over internal buffer
 	}
 	private static DbProviderData FromGeneric(ITypeSymbol genericParam)
 	{
